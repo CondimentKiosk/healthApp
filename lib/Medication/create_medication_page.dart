@@ -14,10 +14,10 @@ class CreateMedication extends StatefulWidget {
 
   @override
   // ignore: library_private_types_in_public_api
-  _CreateAppointmentState createState() => _CreateAppointmentState();
+  _CreateMedicationState createState() => _CreateMedicationState();
 }
 
-class _CreateAppointmentState extends State<CreateMedication> {
+class _CreateMedicationState extends State<CreateMedication> {
   final _formkey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _medTypeController = TextEditingController();
@@ -25,7 +25,8 @@ class _CreateAppointmentState extends State<CreateMedication> {
   final TextEditingController _frequencyController = TextEditingController();
   final TextEditingController _frequencyTypeController =
       TextEditingController();
-      final TextEditingController _combinedFrequencyController = TextEditingController();
+  final TextEditingController _combinedFrequencyController =
+      TextEditingController();
   final TextEditingController _numRemainingController = TextEditingController();
   final TextEditingController _reminderLevelController =
       TextEditingController();
@@ -35,11 +36,11 @@ class _CreateAppointmentState extends State<CreateMedication> {
       final newMed = Medication(
         name: _nameController.text,
         medType: _medTypeController.text,
-        dosage: int.parse(_dosageController.text),
-        frequency: int.parse(_frequencyController.text),
+        dosage: int.parse(_dosageController.text.trim()),
+        frequency: int.parse(_frequencyController.text.trim()), // ✅ correct
         frequencyType: _frequencyTypeController.text,
-        numRemaining: int.parse(_numRemainingController.text),
-        reminderLevel: int.parse(_reminderLevelController.text),
+        numRemaining: int.parse(_numRemainingController.text.trim()),
+        reminderLevel: int.parse(_reminderLevelController.text.trim()),
       );
 
       widget.onSave(newMed);
@@ -196,7 +197,7 @@ class _CreateAppointmentState extends State<CreateMedication> {
     int frequency = 1;
     String frequencyType = "Day";
 
-    final picked = await showDialog<String>(
+    final picked = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -232,9 +233,10 @@ class _CreateAppointmentState extends State<CreateMedication> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    final dosageInfo =
-                        "$frequency time${frequency > 1 ? 's' : ''} per $frequencyType";
-                    Navigator.of(context).pop(dosageInfo);
+                    Navigator.of(context).pop({
+                      'frequency': frequency,
+                      'frequencyType': frequencyType,
+                    });
                   },
                   child: const Text("Ok"),
                 ),
@@ -242,12 +244,15 @@ class _CreateAppointmentState extends State<CreateMedication> {
             );
           },
         );
-      
       },
-    ); 
-    if(picked!=null){
+    );
+    if (picked != null) {
       setState(() {
-        _combinedFrequencyController.text = picked;
+        _frequencyController.text = picked['frequency']
+            .toString(); // Number string
+        _frequencyTypeController.text = picked['frequencyType']; // Unit string
+        _combinedFrequencyController.text =
+            "${picked['frequency']} time${picked['frequency'] > 1 ? 's' : ''} per ${picked['frequencyType']}";
       });
     }
   }

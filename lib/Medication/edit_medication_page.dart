@@ -24,6 +24,8 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
   late TextEditingController _dosageController = TextEditingController();
   late TextEditingController _frequencyController = TextEditingController();
   late TextEditingController _frequencyTypeController = TextEditingController();
+   final TextEditingController _combinedFrequencyController =
+      TextEditingController();
   late TextEditingController _numRemainingController = TextEditingController();
   late TextEditingController _reminderLevelController = TextEditingController();
 
@@ -200,30 +202,52 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
     }
   }
 
-  Future<void> selectFrequency() async {
-    int selectedValue = 1;
+   Future<void> selectFrequency() async {
+    int frequency = 1;
+    String frequencyType = "Day";
 
-    final int? picked = await showDialog<int>(
+    final picked = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Select Frequency"),
-              content: NumberPicker(
-                value: selectedValue,
-                minValue: 0,
-                maxValue: 500,
-                step: 1,
-                itemHeight: 50,
-                onChanged: (value) => setState(() => selectedValue = value),
+              title: const Text("How often do you take this medication?"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Frequency"),
+                  NumberPicker(
+                    value: frequency,
+                    minValue: 1,
+                    maxValue: 10,
+                    onChanged: (value) => setState(() => frequency = value),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text("Per:"),
+                  DropdownButton<String>(
+                    value: frequencyType,
+                    items: ["Day", "Week", "Month"]
+                        .map(
+                          (each) =>
+                              DropdownMenuItem(value: each, child: Text(each)),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setState(() => frequencyType = value);
+                    },
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
-                  child: Text("OK"),
                   onPressed: () {
-                    Navigator.of(context).pop(selectedValue);
+                    Navigator.of(context).pop({
+                      'frequency': frequency,
+                      'frequencyType': frequencyType,
+                    });
                   },
+                  child: const Text("Ok"),
                 ),
               ],
             );
@@ -231,40 +255,13 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
         );
       },
     );
-
     if (picked != null) {
       setState(() {
-        _dosageController.text = picked.toString();
-      });
-    }
-  }
-
-  Future<void> selectFrequencyType() async {
-    final String? picked = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: Text("Select Frequency"),
-          children: [
-            SimpleDialogOption(
-              child: Text("Daily"),
-              onPressed: () => Navigator.pop(context, "Daily"),
-            ),
-            SimpleDialogOption(
-              child: Text("Weekly"),
-              onPressed: () => Navigator.pop(context, "Weekly"),
-            ),
-            SimpleDialogOption(
-              child: Text("Monthly"),
-              onPressed: () => Navigator.pop(context, "Monthly"),
-            ),
-          ],
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _frequencyTypeController.text = picked;
+        _frequencyController.text = picked['frequency']
+            .toString(); // Number string
+        _frequencyTypeController.text = picked['frequencyType']; // Unit string
+        _combinedFrequencyController.text =
+            "${picked['frequency']} time${picked['frequency'] > 1 ? 's' : ''} per ${picked['frequencyType']}";
       });
     }
   }
@@ -377,13 +374,6 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 ),
                 validator: (value) => value!.isEmpty ? "Enter Frequency" : null,
                 onTap: selectFrequency,
-              ),
-              TextFormField(
-                controller: _frequencyTypeController,
-                decoration: InputDecoration(labelText: "Per day/week/month"),
-                validator: (value) =>
-                    value!.isEmpty ? "Enter Frequency Type" : null,
-                onTap: selectFrequencyType,
               ),
               TextFormField(
                 controller: _numRemainingController,
