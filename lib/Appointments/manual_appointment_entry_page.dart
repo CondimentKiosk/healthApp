@@ -23,7 +23,7 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
   final TextEditingController _consultantController = TextEditingController();
   final TextEditingController _hospitalController = TextEditingController();
 
-  void _submitForm() {
+  void submitForm() {
     if (_formkey.currentState!.validate()) {
       final newAppt = Appointment(
         formattedDate: _dateController.text,
@@ -117,7 +117,7 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: submitForm,
                 child: Text('Add Appointment'),
               ),
             ],

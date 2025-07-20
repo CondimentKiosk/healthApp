@@ -31,7 +31,7 @@ class _CreateMedicationState extends State<CreateMedication> {
   final TextEditingController _reminderLevelController =
       TextEditingController();
 
-  void _submitForm() {
+  void submitForm() {
     if (_formkey.currentState!.validate()) {
       final newMed = Medication(
         name: _nameController.text,
@@ -306,7 +306,7 @@ class _CreateMedicationState extends State<CreateMedication> {
           builder: (context, setState) {
             return AlertDialog(
               title: Text(
-                "Select the limit you want reminded at\n Example : When I only have 7 doses left, send me a reminder!",
+                "How many days before you run out do you want reminded to order more?",
               ),
               content: NumberPicker(
                 value: selectedValue,
@@ -354,6 +354,7 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _medTypeController,
+                readOnly: true,
                 decoration: InputDecoration(labelText: "Medication Type"),
                 validator: (value) =>
                     value!.isEmpty ? "Enter Medication Type" : null,
@@ -361,12 +362,14 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _dosageController,
+                readOnly: true,
                 decoration: InputDecoration(labelText: "Dosage"),
                 validator: (value) => value!.isEmpty ? "Enter a Dosage" : null,
                 onTap: selectDosage,
               ),
               TextFormField(
                 controller: _combinedFrequencyController,
+                readOnly: true,
                 decoration: InputDecoration(
                   labelText: "How Often is your Dosage?",
                 ),
@@ -375,6 +378,7 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _numRemainingController,
+                readOnly: true,
                 decoration: InputDecoration(labelText: "Current Stock"),
                 validator: (value) =>
                     value!.isEmpty ? "Enter your Stock" : null,
@@ -382,6 +386,7 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _reminderLevelController,
+                readOnly: true,
                 decoration: InputDecoration(
                   labelText: "Select low stock alert(Optional)",
                 ),
@@ -389,7 +394,7 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: submitForm,
                 child: Text("Add Medication"),
               ),
             ],

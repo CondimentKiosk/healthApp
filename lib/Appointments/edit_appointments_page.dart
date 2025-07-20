@@ -35,7 +35,7 @@ class EditAppointmentsPage extends StatefulWidget{
       _hospitalController = TextEditingController(text: widget.appointment.hospital);
     }
 
-    void _submitForm(){
+    void submitForm(){
       if(_formKey.currentState!.validate()){
         final updated = Appointment(
           formattedDate: _dateController.text, 
@@ -49,7 +49,7 @@ class EditAppointmentsPage extends StatefulWidget{
       }
     }
 
-    Future<void> _selectDate() async {
+    Future<void> selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -65,7 +65,7 @@ class EditAppointmentsPage extends StatefulWidget{
     }
   }
 
-  Future<void> _selectTime() async {
+  Future<void> selectTime() async {
     final TimeOfDay? picked = await showTimePicker(context: context, 
     initialTime: TimeOfDay.now(),
     );
@@ -93,14 +93,14 @@ class EditAppointmentsPage extends StatefulWidget{
                 readOnly: true,
                 decoration: const InputDecoration(labelText: 'Date'),
                 validator: (value) => value!.isEmpty ? 'Enter a date' : null,
-                onTap: _selectDate,
+                onTap: selectDate,
               ),
               TextFormField(
                 controller: _timeController,
                 readOnly: true,
                 decoration: const InputDecoration(labelText: 'Time'),
                 validator: (value) => value!.isEmpty ? 'Enter a time' : null,
-                onTap: _selectTime,
+                onTap: selectTime,
               ),
               TextFormField(
                 controller: _hospitalController,
@@ -113,7 +113,7 @@ class EditAppointmentsPage extends StatefulWidget{
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: submitForm,
                 child: const Text('Save Changes'),
               ),
             ],

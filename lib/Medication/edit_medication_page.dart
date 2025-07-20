@@ -51,7 +51,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
     );
   }
 
-  void _submitForm() {
+  void submitForm() {
     if (_formkey.currentState!.validate()) {
       final updatedMed = Medication(
         name: _nameController.text,
@@ -315,7 +315,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
           builder: (context, setState) {
             return AlertDialog(
               title: Text(
-                "Select the limit you want reminded at\n Example : When I only have 7 doses left, send me a reminder!",
+                "How many days before you run out do you want reminded to order more?",
               ),
               content: NumberPicker(
                 value: selectedValue,
@@ -392,7 +392,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: submitForm,
                 child: Text("Save Changes"),
               ),
             ],

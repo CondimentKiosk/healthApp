@@ -19,13 +19,44 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 
   //functions
-  String _calculateReorderSuggestion(Medication med) {
-    print("numRemaining: ${med.numRemaining}, reminderLevel: ${med.reminderLevel}");
-    if (med.numRemaining <= med.reminderLevel) {
-      return "⚠️ Time to reorder soon!";
+  String calculateReorderSuggestion(Medication med) {
+    final int daysRemaining = calculateDaysRemaining(med);
+    final int difference = (daysRemaining-med.reminderLevel).floor();
+    if(daysRemaining<=med.reminderLevel){
+      return "You need to reorder";
     } else {
-      return "✔️ You're good for now!";
+      return "Reorder required in $difference day${difference > 1 ? 's' : ''}";
     }
+
+  }
+
+  int calculateDosesRemaining(Medication med) {
+    if (med.dosage == 0) return 0;
+    return (med.numRemaining / med.dosage).floor();
+  }
+
+  int calculateDaysRemaining(Medication med) {
+    final int dosesPerDay;
+
+    switch (med.frequencyType.toLowerCase()) {
+      case "day":
+        dosesPerDay = med.frequency;
+        break;
+      case "week":
+        dosesPerDay = (med.frequency / 7).ceil();
+        break;
+      case "month":
+        dosesPerDay = (med.frequency / 30).ceil();
+      default:
+        dosesPerDay = 1;
+    }
+
+    final int daysRemaining = (calculateDosesRemaining(med) / dosesPerDay).floor();
+    return daysRemaining;
+  }
+
+  String displayDaysRemaining(Medication med){
+    return "You have ${calculateDaysRemaining(med)} day${calculateDaysRemaining(med) > 1 ? 's' : ''} before you run out.";
   }
 
   //builds
@@ -46,9 +77,7 @@ class _MedicationPageState extends State<MedicationPage> {
   //widgets
 
   /* Needs Fixed -- 
-  Build a homepage button to go straight to viewing medication
-  fix dosage logic - specify if tablets or liquid
-  so num tablets vs ml
+  
 */
   Widget _showMedications() {
     return Column(
@@ -67,16 +96,15 @@ class _MedicationPageState extends State<MedicationPage> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   subtitle: Text(
-                    "A stock of ${med.numRemaining} gives you X remaining doses.",
+                    displayDaysRemaining(med),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
                 _editMedicationButton(context, med, index),
-                //edit button goes here
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    _calculateReorderSuggestion(med),
+                    calculateReorderSuggestion(med),
                     style: TextStyle(
                       color: Colors.redAccent,
                       fontWeight: FontWeight.bold,
@@ -150,7 +178,7 @@ class Medication {
 
   Medication({
     required this.name,
-        required this.medType,
+    required this.medType,
     required this.dosage,
     required this.frequency,
     required this.frequencyType,

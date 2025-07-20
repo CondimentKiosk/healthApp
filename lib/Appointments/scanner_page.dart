@@ -35,7 +35,7 @@ class _ScannerPageState extends State<ScannerPage> {
 
     if (pickedFile != null) {
       final File imageFile = File(pickedFile.path);
-      final text = await _extractText(imageFile);
+      final text = await extractText(imageFile);
       final appointment = extractAppointmentDetails(text);
 
       setState(() {
@@ -47,7 +47,7 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   // 🔍 OCR function
-  Future<String> _extractText(File imageFile) async {
+  Future<String> extractText(File imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
     final textDetector = GoogleMlKit.vision.textRecognizer();
     final RecognizedText recognizedText = await textDetector.processImage(
