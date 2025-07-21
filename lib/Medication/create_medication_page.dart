@@ -32,12 +32,12 @@ class _CreateMedicationState extends State<CreateMedication> {
       TextEditingController();
 
   void submitForm() {
-    if (_formkey.currentState!.validate()) {
+    if (_formkey.currentState!.validate()){
       final newMed = Medication(
         name: _nameController.text,
         medType: _medTypeController.text,
-        dosage: int.parse(_dosageController.text.trim()),
-        frequency: int.parse(_frequencyController.text.trim()), // ✅ correct
+        dosage: num.parse(_dosageController.text.trim()),
+        frequency: int.parse(_frequencyController.text.trim()), 
         frequencyType: _frequencyTypeController.text,
         numRemaining: int.parse(_numRemainingController.text.trim()),
         reminderLevel: int.parse(_reminderLevelController.text.trim()),
@@ -94,7 +94,7 @@ class _CreateMedicationState extends State<CreateMedication> {
     double selectedMl = 5.0;
     int selectedInject = 1;
 
-    final picked = await showDialog<int>(
+    final picked = await showDialog<num>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -156,7 +156,7 @@ class _CreateMedicationState extends State<CreateMedication> {
                 ],
               );
             } else {
-              content = const Text("Unsupported");
+              content = const Text("Please select medication type");
             }
             return AlertDialog(
               title: Text("Select Dosage"),
@@ -165,18 +165,19 @@ class _CreateMedicationState extends State<CreateMedication> {
                 TextButton(
                   child: Text("OK"),
                   onPressed: () {
-                    int dosage;
                     if (_medTypeController.text == "Tablet") {
-                      dosage = selectedTablets;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedTablets);
+                      });
                     } else if (_medTypeController.text == "Liquid") {
-                      dosage = selectedMl as int;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedMl);
+                      });
                     } else if (_medTypeController.text == "Injection") {
-                      dosage = selectedInject;
-                    } else {
-                      dosage = 0;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedInject);
+                      });
                     }
-
-                    Navigator.of(context).pop(dosage);
                   },
                 ),
               ],
@@ -187,10 +188,13 @@ class _CreateMedicationState extends State<CreateMedication> {
     );
 
     if (picked != null) {
-      setState(() {
-        _dosageController.text = picked.toString();
-      });
-    }
+  setState(() {
+    _dosageController.text = picked is double
+        ? picked.toStringAsFixed(1)
+        : picked.toString();
+  });
+}
+
   }
 
   Future<void> selectFrequency() async {

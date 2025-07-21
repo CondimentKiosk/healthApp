@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:health_app/Medication/create_medication_page.dart';
 import 'package:health_app/Medication/edit_medication_page.dart';
@@ -11,6 +13,13 @@ class MedicationPage extends StatefulWidget {
   State<MedicationPage> createState() => _MedicationPageState();
 }
 
+/*
+to do :
+days remaining reorder isnt working for changing to month/week in the edit tab
+or in adding medication - 1 per week with stock of 5 says reorder in 5 days instead of 3 or 4 weeks
+ok on selecting liquid dose isnt working
+
+*/
 class _MedicationPageState extends State<MedicationPage> {
   void _editMedication(int index, Medication updatedMed) {
     setState(() {
@@ -19,15 +28,13 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 
   //functions
-  String calculateReorderSuggestion(Medication med) {
+  bool calculateReorderSuggestion(Medication med) {
     final int daysRemaining = calculateDaysRemaining(med);
-    final int difference = (daysRemaining-med.reminderLevel).floor();
-    if(daysRemaining<=med.reminderLevel){
-      return "You need to reorder";
+    if (daysRemaining <= med.reminderLevel) {
+      return true;
     } else {
-      return "Reorder required in $difference day${difference > 1 ? 's' : ''}";
+      return false;
     }
-
   }
 
   int calculateDosesRemaining(Medication med) {
@@ -51,11 +58,12 @@ class _MedicationPageState extends State<MedicationPage> {
         dosesPerDay = 1;
     }
 
-    final int daysRemaining = (calculateDosesRemaining(med) / dosesPerDay).floor();
+    final int daysRemaining = (calculateDosesRemaining(med) / dosesPerDay)
+        .floor();
     return daysRemaining;
   }
 
-  String displayDaysRemaining(Medication med){
+  String displayDaysRemaining(Medication med) {
     return "You have ${calculateDaysRemaining(med)} day${calculateDaysRemaining(med) > 1 ? 's' : ''} before you run out.";
   }
 
@@ -85,6 +93,15 @@ class _MedicationPageState extends State<MedicationPage> {
         ...widget.savedMedications.asMap().entries.map((entry) {
           final index = entry.key;
           final med = entry.value;
+          final String unit = (med.medType.toLowerCase() == 'tablet')
+              ? (med.dosage == 1 ? 'tablet' : 'tablets')
+              : (med.medType.toLowerCase() == 'injection')
+              ? (med.dosage == 1 ? 'injection' : 'injections')
+              : 'ml';
+
+          final int daysRemaining = calculateDaysRemaining(med);
+          final int difference = (daysRemaining - med.reminderLevel).floor();
+          final bool needsReorder = calculateReorderSuggestion(med);
 
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -92,7 +109,7 @@ class _MedicationPageState extends State<MedicationPage> {
               children: [
                 ListTile(
                   title: Text(
-                    "${med.name}: Taking ${med.dosage} ${med.medType}\n${med.frequency} times per ${med.frequencyType} ",
+                    "${med.name}: Taking ${med.dosage} $unit\n${med.frequency} time${med.frequency > 1 ? 's' : ''} per ${med.frequencyType} ",
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   subtitle: Text(
@@ -101,12 +118,17 @@ class _MedicationPageState extends State<MedicationPage> {
                   ),
                 ),
                 _editMedicationButton(context, med, index),
+
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    calculateReorderSuggestion(med),
+                    needsReorder
+                        ? "Reorder required"
+                        : "Reorder in $difference days",
                     style: TextStyle(
-                      color: Colors.redAccent,
+                      color: needsReorder
+                          ? Colors.redAccent
+                          : const Color.fromARGB(255, 3, 116, 62),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -169,7 +191,7 @@ class _MedicationPageState extends State<MedicationPage> {
 class Medication {
   final String name;
   final String medType;
-  final int dosage;
+  final num dosage;
   final int frequency;
   final String frequencyType;
   final int numRemaining;
