@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_app/Medication/medication_page.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:wheel_slider/wheel_slider.dart';
 
 class CreateMedication extends StatefulWidget {
   final List<Medication> savedMedications;
@@ -32,12 +33,12 @@ class _CreateMedicationState extends State<CreateMedication> {
       TextEditingController();
 
   void submitForm() {
-    if (_formkey.currentState!.validate()){
+    if (_formkey.currentState!.validate()) {
       final newMed = Medication(
         name: _nameController.text,
         medType: _medTypeController.text,
         dosage: num.parse(_dosageController.text.trim()),
-        frequency: int.parse(_frequencyController.text.trim()), 
+        frequency: int.parse(_frequencyController.text.trim()),
         frequencyType: _frequencyTypeController.text,
         numRemaining: int.parse(_numRemainingController.text.trim()),
         reminderLevel: int.parse(_reminderLevelController.text.trim()),
@@ -91,8 +92,9 @@ class _CreateMedicationState extends State<CreateMedication> {
 
   Future<void> selectDosage() async {
     int selectedTablets = 1;
-    double selectedMl = 5.0;
+    double selectedMl = 0.0;
     int selectedInject = 1;
+    int selectedIndex = 0;
 
     final picked = await showDialog<num>(
       context: context,
@@ -122,14 +124,39 @@ class _CreateMedicationState extends State<CreateMedication> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text("Select Ml per Dose"),
-                  Slider(
-                    value: selectedMl,
-                    min: 0,
-                    max: 50,
-                    divisions: ((50) / 0.5).round(),
-                    label: "${selectedMl.toStringAsFixed(1)} ",
-                    onChanged: (value) => setState(() => selectedMl = value),
+                  WheelSlider.number(
+                    interval: 0.5,
+                    totalCount: 201,
+                    initValue: selectedIndex * 0.5, // must be double value
+                    currentIndex: selectedIndex, // must be int index
+                    selectedNumberStyle: const TextStyle(
+                      fontSize: 12.0,
+                      color: Color.fromARGB(255, 235, 3, 3),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    unSelectedNumberStyle: const TextStyle(
+                      fontSize: 12.0,
+                      color: Colors.grey,
+                    ),
+                    onValueChanged: (value) {
+final newIndex = (value / 0.5).floor();
+                      print('value: $value, newIndex: $newIndex');
+                      setState(() {
+                        selectedIndex = newIndex;
+                              selectedMl = newIndex * 0.5;  // update selectedMl here as well
+
+                      });
+                    },
                   ),
+
+                  // Slider(
+                  //   value: selectedMl,
+                  //   min: 0,
+                  //   max: 50,
+                  //   divisions: ((50) / 0.5).round(),
+                  //   label: "${selectedMl.toStringAsFixed(1)} ",
+                  //   onChanged: (value) => setState(() => selectedMl = value),
+                  // ),
                 ],
               );
             } else if (_medTypeController.text == "Injection") {
@@ -188,13 +215,12 @@ class _CreateMedicationState extends State<CreateMedication> {
     );
 
     if (picked != null) {
-  setState(() {
-    _dosageController.text = picked is double
-        ? picked.toStringAsFixed(1)
-        : picked.toString();
-  });
-}
-
+      setState(() {
+        _dosageController.text = picked is double
+            ? picked.toStringAsFixed(1)
+            : picked.toString();
+      });
+    }
   }
 
   Future<void> selectFrequency() async {
