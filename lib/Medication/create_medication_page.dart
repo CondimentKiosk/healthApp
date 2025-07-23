@@ -119,6 +119,7 @@ class _CreateMedicationState extends State<CreateMedication> {
                   ),
                 ],
               );
+              // THIS NEEDS FIXED ***************
             } else if (_medTypeController.text == "Liquid") {
               content = Column(
                 mainAxisSize: MainAxisSize.min,
