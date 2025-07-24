@@ -1,5 +1,6 @@
 import 'package:health_app/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
+import 'package:health_app/HealthDiary/health_diary_home.dart';
 import 'package:health_app/Medication/medication_page.dart';
 
 import 'Appointments/scanner_page.dart';
@@ -44,6 +45,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Appointment> savedAppointments = [];
   List<Medication> savedMedications = [];
+  List<SymptomEntry> healthReport = [];
+  List<Symptom>symptoms = [];
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
           _styledButton(_viewAppointments()),
           const SizedBox(height: 20),
           _styledButton(_viewMedication()),
+          const SizedBox(height: 20),
+          _styledButton(_viewHealthDiary()),
         ],
       ),
     );
@@ -110,12 +115,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // Widget _addMedication(){
-  //   return ElevatedButton(
-  //     onPressed: onPressed, child: child
-  //     )
-  // }
-
   Widget _viewMedication() {
     return ElevatedButton(
       onPressed: () {
@@ -126,5 +125,13 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       child: const Text("Open Medication"),
     );
+  }
+
+  Widget _viewHealthDiary(){
+    return ElevatedButton(onPressed: 
+    (){
+      Navigator.push(context, 
+      MaterialPageRoute(builder: (context)=>HealthDiaryPage(healthReport: healthReport, symptoms: symptoms, onSave: (SymptomEntry){},)));
+    }, child: const Text("Open Health Diary"));
   }
 }
