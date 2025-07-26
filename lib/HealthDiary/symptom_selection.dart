@@ -82,7 +82,8 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
     final predefined = widget.predefinedSymptoms.map((sym)=> sym.name).toSet();
     final allSymptoms = {
       ...predefined,
-      ...customSymptoms
+      ...customSymptoms,
+      ...selectedSymptomNames,
     }.toList()..sort();
 
     return Scaffold(

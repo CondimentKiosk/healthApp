@@ -68,9 +68,44 @@ class _MedicationPageState extends State<MedicationPage> {
   //builds
   @override
   Widget build(BuildContext context) {
+    final hasMedication = widget.savedMedications.isNotEmpty;
     return Scaffold(
       appBar: AppBar(title: Text('Medications')),
-      body: _buildUI(),
+      body: hasMedication ? 
+      _buildUI() : 
+      Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("No Medications saved yet!"),
+                  const Text("Add new Medication"),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateMedication(
+                            savedMedications: widget.savedMedications,
+                            onSave: (newMed) {
+                              setState(() {
+                                widget.savedMedications.add(newMed);
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Medication added!'),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    label: const Text(""),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
