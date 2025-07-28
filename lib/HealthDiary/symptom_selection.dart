@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/HealthDiary/health_diary_home.dart';
+import 'package:health_app/HealthDiary/health_rating.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SymptomSelectionPage extends StatefulWidget {

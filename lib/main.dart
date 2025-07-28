@@ -1,6 +1,7 @@
 import 'package:health_app/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
-import 'package:health_app/HealthDiary/health_diary_home.dart';
+import 'package:health_app/HealthDiary/health_rating.dart';
+import 'package:health_app/HealthDiary/health_record.dart';
 import 'package:health_app/Medication/medication_page.dart';
 
 import 'Appointments/scanner_page.dart';
@@ -22,11 +23,11 @@ class MyApp extends StatelessWidget {
           seedColor: const Color.fromARGB(255, 21, 92, 1),
         ),
         textTheme: const TextTheme(
-        bodyLarge: TextStyle(fontSize: 18),   
-        bodyMedium: TextStyle(fontSize: 16),   
-        titleLarge: TextStyle(fontSize: 25), 
-        labelLarge: TextStyle(fontSize: 25),
-      ),
+          bodyLarge: TextStyle(fontSize: 18),
+          bodyMedium: TextStyle(fontSize: 16),
+          titleLarge: TextStyle(fontSize: 25),
+          labelLarge: TextStyle(fontSize: 25),
+        ),
       ),
       initialRoute: '/',
       routes: {'/': (context) => const MyHomePage(title: 'Health Hub')},
@@ -46,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Appointment> savedAppointments = [];
   List<Medication> savedMedications = [];
   List<SymptomEntry> healthReport = [];
-  List<Symptom>symptoms = [];
+  List<Symptom> symptoms = [];
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +71,8 @@ class _MyHomePageState extends State<MyHomePage> {
           _styledButton(_viewMedication()),
           const SizedBox(height: 20),
           _styledButton(_viewHealthDiary()),
+          const SizedBox(height: 20),
+          _styledButton(_viewHealthReport()),
         ],
       ),
     );
@@ -120,18 +123,49 @@ class _MyHomePageState extends State<MyHomePage> {
       onPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => MedicationPage(savedMedications: savedMedications,)),
+          MaterialPageRoute(
+            builder: (context) =>
+                MedicationPage(savedMedications: savedMedications),
+          ),
         );
       },
       child: const Text("Open Medication"),
     );
   }
 
-  Widget _viewHealthDiary(){
-    return ElevatedButton(onPressed: 
-    (){
-      Navigator.push(context, 
-      MaterialPageRoute(builder: (context)=>HealthDiaryPage(healthReport: healthReport, symptoms: symptoms, onSave: (SymptomEntry){},)));
-    }, child: const Text("Open Health Diary"));
+  Widget _viewHealthDiary() {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HealthDiaryPage(
+              healthReport: healthReport,
+              symptoms: symptoms,
+              onSave: (SymptomEntry entry) {
+                setState(() {
+                  healthReport.add(entry);
+                });
+              },
+            ),
+          ),
+        );
+      },
+      child: const Text("Open Health Diary"),
+    );
+  }
+
+  Widget _viewHealthReport() {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HealthRecordPage(healthReport: healthReport),
+          ),
+        );
+      },
+      child: const Text("Open Health Report"),
+    );
   }
 }

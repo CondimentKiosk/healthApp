@@ -19,7 +19,7 @@ class HealthDiaryPage extends StatefulWidget {
 
 class _HealthDiaryPageState extends State<HealthDiaryPage> {
   final _formkey = GlobalKey<FormState>();
-  final Map<String, double> ratings = {};
+  final Map<String, double?> ratings = {};
   final Set<String> ignoredSymptoms = {};
   final TextEditingController _notesController = TextEditingController();
 
@@ -27,7 +27,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
   void initState() {
     super.initState();
     for (final symptom in widget.symptoms) {
-      ratings[symptom.name] = 5;
+      ratings[symptom.name] = null;
     }
   }
 
@@ -45,7 +45,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
     final Map<String, int> finalRatings = {};
 
     for (final name in ratings.keys) {
-      if (!ignoredSymptoms.contains(name)) {
+      if (!ignoredSymptoms.contains(name) && ratings[name] != null) {
         finalRatings[name] = ratings[name]!.round();
       }
     }
@@ -56,42 +56,47 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
     );
 
+    print("Saving entry: ${entry.symptomRatings}");
     widget.onSave(entry);
     Navigator.pop(context);
   }
 
   Future<void> goToSymptomSelector() async {
     final result = await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) => SymptomSelectionPage(
-        predefinedSymptoms: 
-      [
-        Symptom(name: "Pain"),
-        Symptom(name: "Fatigue"),
-        Symptom(name: "Sleep Quality"),
-        Symptom(name: "Mood"),
-        Symptom(name: "Nausea"),
-        Symptom(name: "Appetite"),
-        Symptom(name: "Level of activeness"),
-        Symptom(name: "Concentration"),
-        Symptom(name: "Memory"),
-      ]),
-      ));
-      if(result != null && mounted){
-        final updatedSymptomNames = result as List<String>;
-        setState(() {
-          widget.symptoms 
+      context,
+      MaterialPageRoute(
+        builder: (context) => SymptomSelectionPage(
+          predefinedSymptoms: [
+            Symptom(name: "Pain"),
+            Symptom(name: "Fatigue"),
+            Symptom(name: "Sleep Quality"),
+            Symptom(name: "Mood"),
+            Symptom(name: "Nausea"),
+            Symptom(name: "Appetite"),
+            Symptom(name: "Level of activeness"),
+            Symptom(name: "Concentration"),
+            Symptom(name: "Memory"),
+          ],
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      final updatedSymptomNames = result as List<String>;
+      setState(() {
+        widget.symptoms
           ..clear()
-          ..addAll(updatedSymptomNames.map((name)=> Symptom(name: name)));
+          ..addAll(updatedSymptomNames.map((name) => Symptom(name: name)));
 
-          ratings.clear();
-          for (final name in updatedSymptomNames) {
-      ratings.putIfAbsent(name, () => 5.0); // defaults to 5
+        ratings.clear();
+        for (final name in updatedSymptomNames) {
+          ratings.putIfAbsent(name, () => 5.0); // defaults to 5
+        }
+        ratings.removeWhere((key, _) => !updatedSymptomNames.contains(key));
+        ignoredSymptoms.removeWhere(
+          (name) => !updatedSymptomNames.contains(name),
+        );
+      });
     }
-          ratings.removeWhere((key, _) => !updatedSymptomNames.contains(key));
-    ignoredSymptoms.removeWhere((name) => !updatedSymptomNames.contains(name));
-        });
-      }
   }
 
   @override
@@ -113,11 +118,11 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   ElevatedButton.icon(
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Manage Symptoms"),
-                  onPressed: goToSymptomSelector,
-                ),
-                const SizedBox(height: 12),
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Manage Symptoms"),
+                    onPressed: goToSymptomSelector,
+                  ),
+                  const SizedBox(height: 12),
                   ...widget.symptoms.map((sym) {
                     final name = sym.name;
                     final ignored = ignoredSymptoms.contains(name);
@@ -139,15 +144,18 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
                           ],
                         ),
                         Slider(
-                          value: ratings[name]!,
+                          value: ratings[name] ?? 5.0,
                           min: 1,
                           max: 10,
                           divisions: 9,
-                          label: ratings[name]!.round().toString(),
+                          label: ratings[name]?.round().toString() ?? "?",
                           onChanged: ignored
                               ? null
-                              : (value) =>
-                                    setState(() => ratings[name] = value),
+                              : (value) {
+                                  setState(() {
+                                    ratings[name] = value;
+                                  });
+                                },
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -171,12 +179,20 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
                 ],
               ),
             )
-          : Center(child: Column(mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("No tracked symptoms yet"),
-            const SizedBox(height: 20,),
-            ElevatedButton.icon(icon: const Icon(Icons.add), onPressed: goToSymptomSelector, label: const Text("Select Symptoms"))
-          ],)),
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("No tracked symptoms yet"),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    onPressed: goToSymptomSelector,
+                    label: const Text("Select Symptoms"),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
