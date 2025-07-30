@@ -121,11 +121,15 @@ class _MedicationPageState extends State<MedicationPage> {
   
 */
   Widget _showMedications() {
-    return Column(
-      children: [
-        ...widget.savedMedications.asMap().entries.map((entry) {
-          final index = entry.key;
-          final med = entry.value;
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: AlwaysScrollableScrollPhysics(),
+      itemCount: widget.savedMedications.length,
+      itemBuilder: (context, index) {
+        
+      final med = widget.savedMedications[index];
+
+      
           final String unit = (med.medType.toLowerCase() == 'tablet')
               ? (med.dosage == 1 ? 'tablet' : 'tablets')
               : (med.medType.toLowerCase() == 'injection')
@@ -169,8 +173,8 @@ class _MedicationPageState extends State<MedicationPage> {
               ],
             ),
           );
-        }),
-      ],
+        
+        }
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:health_app/Appointments/scanner_page.dart';
+import 'package:intl/intl.dart';
 
 class ManualAppointmentEntry extends StatefulWidget {
   final List<Appointment> appointments;
@@ -25,8 +26,9 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
 
   void submitForm() {
     if (_formkey.currentState!.validate()) {
+      final parsedDate = DateFormat('dd/MM/yyyy').parse(_dateController.text);
       final newAppt = Appointment(
-        formattedDate: _dateController.text,
+        date: parsedDate,
         time: _timeController.text,
         consultant: _consultantController.text.isNotEmpty
             ? _consultantController.text

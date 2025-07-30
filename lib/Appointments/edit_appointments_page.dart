@@ -1,55 +1,61 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:health_app/Appointments/scanner_page.dart';
+import 'package:intl/intl.dart';
 
-class EditAppointmentsPage extends StatefulWidget{
+class EditAppointmentsPage extends StatefulWidget {
   final Appointment appointment;
   final Function(Appointment) onSave;
 
   const EditAppointmentsPage({
     super.key,
     required this.appointment,
-    required this.onSave
+    required this.onSave,
   });
 
   @override
-  State<EditAppointmentsPage> createState() => 
-    _EditAppointmentsPageState();
+  State<EditAppointmentsPage> createState() => _EditAppointmentsPageState();
 }
 
-  class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
-    late TextEditingController _dateController;
-    late TextEditingController _timeController;
-    late TextEditingController _consultantController;
-    late TextEditingController _hospitalController;
+class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
+  late TextEditingController _dateController;
+  late TextEditingController _timeController;
+  late TextEditingController _consultantController;
+  late TextEditingController _hospitalController;
 
-    final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-    @override
-    void initState(){
-      super.initState();
-      _dateController = TextEditingController(text: widget.appointment.formattedDate);
-      _timeController = TextEditingController(text: widget.appointment.time);
-      _consultantController = TextEditingController(text: widget.appointment.consultant);
-      _hospitalController = TextEditingController(text: widget.appointment.hospital);
+  @override
+  void initState() {
+    super.initState();
+    _dateController = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(widget.appointment.date),
+    );
+
+    _timeController = TextEditingController(text: widget.appointment.time);
+    _consultantController = TextEditingController(
+      text: widget.appointment.consultant,
+    );
+    _hospitalController = TextEditingController(
+      text: widget.appointment.hospital,
+    );
+  }
+
+  void submitForm() {
+    if (_formKey.currentState!.validate()) {
+      final parsedDate = DateFormat('dd/MM/yyyy').parse(_dateController.text);
+      final updated = Appointment(
+        date: parsedDate,
+        time: _timeController.text,
+        consultant: _consultantController.text,
+        hospital: _hospitalController.text,
+      );
+
+      widget.onSave(updated);
+      Navigator.pop(context);
     }
+  }
 
-    void submitForm(){
-      if(_formKey.currentState!.validate()){
-        final updated = Appointment(
-          formattedDate: _dateController.text, 
-          time: _timeController.text, 
-          consultant: _consultantController.text, 
-          hospital: _hospitalController.text, 
-          );
-
-          widget.onSave(updated);
-          Navigator.pop(context);
-      }
-    }
-
-    Future<void> selectDate() async {
+  Future<void> selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -66,19 +72,20 @@ class EditAppointmentsPage extends StatefulWidget{
   }
 
   Future<void> selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(context: context, 
-    initialTime: TimeOfDay.now(),
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
     );
     if (picked != null) {
-    // ignore: use_build_context_synchronously
-    final formatted = picked.format(context); 
-    setState(() {
-      _timeController.text = formatted;
-    });
+      // ignore: use_build_context_synchronously
+      final formatted = picked.format(context);
+      setState(() {
+        _timeController.text = formatted;
+      });
     }
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Appointment')),
@@ -105,11 +112,14 @@ class EditAppointmentsPage extends StatefulWidget{
               TextFormField(
                 controller: _hospitalController,
                 decoration: const InputDecoration(labelText: 'Hospital'),
-                validator: (value) => value!.isEmpty ? 'Enter a hospital' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Enter a hospital' : null,
               ),
               TextFormField(
                 controller: _consultantController,
-                decoration: const InputDecoration(labelText: 'Consultant (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Consultant (optional)',
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -122,7 +132,4 @@ class EditAppointmentsPage extends StatefulWidget{
       ),
     );
   }
-  
 }
-
-

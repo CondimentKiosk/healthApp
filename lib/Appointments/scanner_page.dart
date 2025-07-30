@@ -257,10 +257,9 @@ Widget _styledButton(Widget button) {
     return ElevatedButton(
       onPressed: () {
         final extractedDate = parseExtractedDate(extracted['date'] ?? '');
-        final formatted = DateFormat('dd/MM/yy').format(extractedDate);
 
         final newAppt = Appointment(
-          formattedDate: formatted,
+          date: extractedDate,
           time: extracted['time'] ?? '',
           consultant: extracted['consultant'] ?? 'N/A',
           hospital: extracted['hospital'] ?? 'N/A',
@@ -282,27 +281,31 @@ Widget _styledButton(Widget button) {
     );
   }
 }
-
 class Appointment {
-  final String formattedDate;
+  final DateTime date;
   final String time;
   final String consultant;
   final String hospital;
 
   Appointment({
-    required this.formattedDate,
+    required this.date,
     required this.time,
     required this.consultant,
     required this.hospital,
   });
 
   Map<String, dynamic> toMap() {
-    return {'time': time, 'consultant': consultant, 'hospital': hospital};
+    return {
+      'date': date.toIso8601String(), // Safe for saving to disk
+      'time': time,
+      'consultant': consultant,
+      'hospital': hospital,
+    };
   }
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
-      formattedDate: map['date'],
+      date: DateTime.parse(map['date']), // Expects ISO string
       time: map['time'],
       consultant: map['consultant'],
       hospital: map['hospital'],
