@@ -13,6 +13,24 @@
 migrate_working_dir/
 .env
 
+# Node dependencies
+node_modules/
+
+# dotenv files (API keys, DB passwords)
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
 # IntelliJ related
 *.iml
 *.ipr
