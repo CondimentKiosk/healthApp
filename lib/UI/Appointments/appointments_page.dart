@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/Appointments/edit_appointments_page.dart';
-import 'package:health_app/Appointments/manual_appointment_entry_page.dart';
-import 'package:health_app/Appointments/scanner_page.dart';
+import 'package:health_app/UI/Appointments/edit_appointments_page.dart';
+import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
+import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 

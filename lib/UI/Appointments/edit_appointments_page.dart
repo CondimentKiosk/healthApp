@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/Appointments/scanner_page.dart';
+import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:intl/intl.dart';
 
 class EditAppointmentsPage extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/HealthDiary/symptom_selection.dart';
+import 'package:health_app/UI/HealthDiary/symptom_selection.dart';
 
 class HealthDiaryPage extends StatefulWidget {
   final List<SymptomEntry> healthReport;

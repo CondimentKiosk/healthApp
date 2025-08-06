@@ -1,61 +1,70 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/Medication/medication_page.dart';
+import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:numberpicker/numberpicker.dart';
 
-class CreateMedication extends StatefulWidget {
-  final List<Medication> savedMedications;
+class EditMedicationPage extends StatefulWidget {
+  final Medication medication;
   final Function(Medication) onSave;
 
-  const CreateMedication({
+  const EditMedicationPage({
     super.key,
-    required this.savedMedications,
+    required this.medication,
     required this.onSave,
   });
 
   @override
   // ignore: library_private_types_in_public_api
-  _CreateMedicationState createState() => _CreateMedicationState();
+  _EditMedicationPageState createState() => _EditMedicationPageState();
 }
 
-class _CreateMedicationState extends State<CreateMedication> {
+class _EditMedicationPageState extends State<EditMedicationPage> {
   final _formkey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _medTypeController = TextEditingController();
-  final TextEditingController _dosageController = TextEditingController();
-  final TextEditingController _frequencyController = TextEditingController();
-  final TextEditingController _frequencyTypeController =
+  late TextEditingController _nameController = TextEditingController();
+  late TextEditingController _medTypeController = TextEditingController();
+  late TextEditingController _dosageController = TextEditingController();
+  late TextEditingController _frequencyController = TextEditingController();
+  late TextEditingController _frequencyTypeController = TextEditingController();
+   final TextEditingController _combinedFrequencyController =
       TextEditingController();
-  final TextEditingController _combinedFrequencyController =
-      TextEditingController();
-  final TextEditingController _numRemainingController = TextEditingController();
-  final TextEditingController _reminderLevelController =
-      TextEditingController();
+  late TextEditingController _numRemainingController = TextEditingController();
+  late TextEditingController _reminderLevelController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.medication.name);
+    _medTypeController = TextEditingController(text: widget.medication.medType);
+    _dosageController = TextEditingController(
+      text: widget.medication.dosage.toString(),
+    );
+    _frequencyController = TextEditingController(
+      text: widget.medication.frequency.toString(),
+    );
+    _frequencyTypeController = TextEditingController(
+      text: widget.medication.frequencyType,
+    );
+    _numRemainingController = TextEditingController(
+      text: widget.medication.numRemaining.toString(),
+    );
+    _reminderLevelController = TextEditingController(
+      text: widget.medication.reminderLevel.toString(),
+    );
+  }
 
   void submitForm() {
-    if (_formkey.currentState!.validate()){
-      final newMed = Medication(
+    if (_formkey.currentState!.validate()) {
+      final updatedMed = Medication(
         name: _nameController.text,
         medType: _medTypeController.text,
-        dosage: num.parse(_dosageController.text.trim()),
-        frequency: int.parse(_frequencyController.text.trim()), 
+        dosage: int.parse(_dosageController.text),
+        frequency: int.parse(_frequencyController.text),
         frequencyType: _frequencyTypeController.text,
-        numRemaining: int.parse(_numRemainingController.text.trim()),
-        reminderLevel: int.parse(_reminderLevelController.text.trim()),
+        numRemaining: int.parse(_numRemainingController.text),
+        reminderLevel: int.parse(_reminderLevelController.text),
       );
 
-      widget.onSave(newMed);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('New Medication Added!')));
-
-      _nameController.clear();
-      _medTypeController.clear();
-      _dosageController.clear();
-      _frequencyController.clear();
-      _frequencyTypeController.clear();
-      _numRemainingController.clear();
-      _reminderLevelController.clear();
+      widget.onSave(updatedMed);
+      Navigator.pop(context);
     }
   }
 
@@ -94,7 +103,7 @@ class _CreateMedicationState extends State<CreateMedication> {
     double selectedMl = 5.0;
     int selectedInject = 1;
 
-    final picked = await showDialog<num>(
+    final picked = await showDialog<int>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -156,7 +165,7 @@ class _CreateMedicationState extends State<CreateMedication> {
                 ],
               );
             } else {
-              content = const Text("Please select medication type");
+              content = const Text("Unsupported");
             }
             return AlertDialog(
               title: Text("Select Dosage"),
@@ -165,19 +174,18 @@ class _CreateMedicationState extends State<CreateMedication> {
                 TextButton(
                   child: Text("OK"),
                   onPressed: () {
+                    int dosage;
                     if (_medTypeController.text == "Tablet") {
-                      Future.microtask(() {
-                        Navigator.of(context).pop(selectedTablets);
-                      });
+                      dosage = selectedTablets;
                     } else if (_medTypeController.text == "Liquid") {
-                      Future.microtask(() {
-                        Navigator.of(context).pop(selectedMl);
-                      });
+                      dosage = selectedMl as int;
                     } else if (_medTypeController.text == "Injection") {
-                      Future.microtask(() {
-                        Navigator.of(context).pop(selectedInject);
-                      });
+                      dosage = selectedInject;
+                    } else {
+                      dosage = 0;
                     }
+
+                    Navigator.of(context).pop(dosage);
                   },
                 ),
               ],
@@ -188,16 +196,13 @@ class _CreateMedicationState extends State<CreateMedication> {
     );
 
     if (picked != null) {
-  setState(() {
-    _dosageController.text = picked is double
-        ? picked.toStringAsFixed(1)
-        : picked.toString();
-  });
-}
-
+      setState(() {
+        _dosageController.text = picked.toString();
+      });
+    }
   }
 
-  Future<void> selectFrequency() async {
+   Future<void> selectFrequency() async {
     int frequency = 1;
     String frequencyType = "Day";
 
@@ -344,7 +349,7 @@ class _CreateMedicationState extends State<CreateMedication> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Add a New Medication")),
+      appBar: AppBar(title: Text("Edit Medication")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -357,23 +362,13 @@ class _CreateMedicationState extends State<CreateMedication> {
                 validator: (value) => value!.isEmpty ? "Enter a Name" : null,
               ),
               TextFormField(
-                controller: _medTypeController,
-                readOnly: true,
-                decoration: InputDecoration(labelText: "Medication Type"),
-                validator: (value) =>
-                    value!.isEmpty ? "Enter Medication Type" : null,
-                onTap: selectMedType,
-              ),
-              TextFormField(
                 controller: _dosageController,
-                readOnly: true,
                 decoration: InputDecoration(labelText: "Dosage"),
                 validator: (value) => value!.isEmpty ? "Enter a Dosage" : null,
                 onTap: selectDosage,
               ),
               TextFormField(
-                controller: _combinedFrequencyController,
-                readOnly: true,
+                controller: _frequencyController,
                 decoration: InputDecoration(
                   labelText: "How Often is your Dosage?",
                 ),
@@ -382,7 +377,6 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _numRemainingController,
-                readOnly: true,
                 decoration: InputDecoration(labelText: "Current Stock"),
                 validator: (value) =>
                     value!.isEmpty ? "Enter your Stock" : null,
@@ -390,16 +384,16 @@ class _CreateMedicationState extends State<CreateMedication> {
               ),
               TextFormField(
                 controller: _reminderLevelController,
-                readOnly: true,
                 decoration: InputDecoration(
-                  labelText: "Select low stock alert(Optional)",
+                  labelText:
+                      "Stock level you want to receive low-stock alert (Optional)",
                 ),
                 onTap: selectReminderLevel,
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: submitForm,
-                child: Text("Add Medication"),
+                child: Text("Save Changes"),
               ),
             ],
           ),

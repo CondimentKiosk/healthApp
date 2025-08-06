@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/Medication/create_medication_page.dart';
-import 'package:health_app/Medication/edit_medication_page.dart';
+import 'package:health_app/UI/Medication/create_medication_page.dart';
+import 'package:health_app/UI/Medication/edit_medication_page.dart';
 
 class MedicationPage extends StatefulWidget {
   final List<Medication> savedMedications;
