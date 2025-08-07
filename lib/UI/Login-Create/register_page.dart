@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 _birthdayController,
                 keyboardType: TextInputType.datetime,
               ),
-              _buildTextField('HSC Number (Optional)', _hscController, keyboardType: TextInputType.number),
+              _buildTextField('HSC Number (Optional)', _hscController, keyboardType: TextInputType.number, optional: true),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedRole,
