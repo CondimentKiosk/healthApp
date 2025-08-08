@@ -33,7 +33,6 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/login',
       routes: {
-        '/': (context) => const MyHomePage(title: 'Health Hub'),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(), // Optional
       },
@@ -42,8 +41,15 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({
+    super.key,
+    required this.title,
+    required this.userId,
+    required this.role,
+  });
   final String title;
+  final int userId;
+  final String role;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -58,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(title: Text('${widget.title} (${widget.role})')),
       body: _buildUI(),
     );
   }

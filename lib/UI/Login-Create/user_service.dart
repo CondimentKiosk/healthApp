@@ -19,7 +19,7 @@ class UserService {
     }
   }
 
-  Future<int> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/users/login'),
       headers: {'Content-Type': 'application/json'},
@@ -28,7 +28,10 @@ class UserService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return data['user_id']; // Logged-in user ID
+      return {      
+       'user_id': data['user_id'],
+       'role': data['role'],
+      };
     } else {
       throw Exception('Login failed: ${response.body}');
     }
