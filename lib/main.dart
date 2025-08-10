@@ -1,10 +1,12 @@
-import 'package:health_app/Appointments/appointments_page.dart';
+import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
-import 'package:health_app/HealthDiary/health_rating.dart';
-import 'package:health_app/HealthDiary/health_record.dart';
-import 'package:health_app/Medication/medication_page.dart';
+import 'package:health_app/UI/HealthDiary/health_rating.dart';
+import 'package:health_app/UI/HealthDiary/health_record.dart';
+import 'package:health_app/UI/Login-Create/login_page.dart';
+import 'package:health_app/UI/Login-Create/register_page.dart';
+import 'package:health_app/UI/Medication/medication_page.dart';
 
-import 'Appointments/scanner_page.dart';
+import 'UI/Appointments/scanner_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,15 +31,25 @@ class MyApp extends StatelessWidget {
           labelLarge: TextStyle(fontSize: 25),
         ),
       ),
-      initialRoute: '/',
-      routes: {'/': (context) => const MyHomePage(title: 'Health Hub')},
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(), // Optional
+      },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({
+    super.key,
+    required this.title,
+    required this.userId,
+    required this.role,
+  });
   final String title;
+  final int userId;
+  final String role;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -52,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(title: Text('${widget.title} (${widget.role})')),
       body: _buildUI(),
     );
   }
