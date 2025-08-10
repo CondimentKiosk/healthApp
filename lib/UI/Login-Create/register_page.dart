@@ -117,9 +117,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 decoration: const InputDecoration(labelText: 'I am a...'),
                 items: const [
                   DropdownMenuItem(value: 'patient', child: Text('Patient')),
-                  DropdownMenuItem(value: 'carer', child: Text('Carer')),
-                  DropdownMenuItem(value: 'carer', child: Text('Family')),
-                ],
+                  DropdownMenuItem(value: 'carer', child: Text('Carer/Family')),                ],
                 onChanged: (value) => setState(() => selectedRole = value!),
               ),
               if(isCarer)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:health_app/UI/Appointments/edit_appointments_page.dart';
 import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
+import 'package:health_app/access_rights.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -20,12 +21,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       widget.savedAppointments[index] = updatedAppointment;
     });
   }
-DateTime focusedDay = DateTime.now();
+
+  DateTime focusedDay = DateTime.now();
   DateTime? selectedDay;
 
-  DateTime normaliseDate(DateTime date) => DateTime(date.year, date.month, date.day);
+  DateTime normaliseDate(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
-  Map<DateTime, List<Appointment>> appointmentsByDate(List<Appointment> appointments) {
+  Map<DateTime, List<Appointment>> appointmentsByDate(
+    List<Appointment> appointments,
+  ) {
     final Map<DateTime, List<Appointment>> grouped = {};
 
     for (final appt in appointments) {
@@ -40,7 +45,8 @@ DateTime focusedDay = DateTime.now();
 
     return grouped;
   }
-    bool isCalendarView = true;
+
+  bool isCalendarView = true;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +98,7 @@ DateTime focusedDay = DateTime.now();
   Widget buildUI() {
     return Column(
       children: [
-        _createManualAppt(),
+        if (AccessRights.has('appointments', 'write')) _createManualAppt(),
         ToggleButtons(
           isSelected: [isCalendarView, !isCalendarView],
           onPressed: (index) {
@@ -177,7 +183,8 @@ DateTime focusedDay = DateTime.now();
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-              _editAppointmentsButton(context, appt, index),
+              if (AccessRights.has('appointments', 'write'))
+                _editAppointmentsButton(context, appt, index),
             ],
           ),
         );
@@ -209,23 +216,24 @@ DateTime focusedDay = DateTime.now();
         const SizedBox(height: 8),
         Expanded(
           child: ListView(
-            children: (selectedDay == null
-                    ? []
-                    : appts[normaliseDate(selectedDay!)] ?? [])
-                .map(
-                  (appt) => ListTile(
-                    title: Text(
-                      "${DateFormat('dd/MM/yyyy').format(appt.date)} at ${appt.time}",
-                    ),
-                    subtitle: Text(
-                        "Consultant: ${appt.consultant} at ${appt.hospital}"),
-                  ),
-                )
-                .toList(),
+            children:
+                (selectedDay == null
+                        ? []
+                        : appts[normaliseDate(selectedDay!)] ?? [])
+                    .map(
+                      (appt) => ListTile(
+                        title: Text(
+                          "${DateFormat('dd/MM/yyyy').format(appt.date)} at ${appt.time}",
+                        ),
+                        subtitle: Text(
+                          "Consultant: ${appt.consultant} at ${appt.hospital}",
+                        ),
+                      ),
+                    )
+                    .toList(),
           ),
         ),
       ],
     );
   }
-
 }

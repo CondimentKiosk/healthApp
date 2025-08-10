@@ -5,6 +5,8 @@ import 'package:health_app/UI/HealthDiary/health_record.dart';
 import 'package:health_app/UI/Login-Create/login_page.dart';
 import 'package:health_app/UI/Login-Create/register_page.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
+import 'package:health_app/UI/no_access.dart';
+import 'package:health_app/access_rights.dart';
 
 import 'UI/Appointments/scanner_page.dart';
 
@@ -34,7 +36,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(), // Optional
+        '/register': (context) => const RegisterPage(),
       },
     );
   }
@@ -115,20 +117,25 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _viewAppointments() {
-    return ElevatedButton(
-      onPressed: () {
+ Widget _viewAppointments() {
+  return ElevatedButton(
+    onPressed: () {
+      if (!AccessRights.has('appointments', 'read')) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                AppointmentsPage(savedAppointments: savedAppointments),
-          ),
+          MaterialPageRoute(builder: (_) => NoAccessPage(resourceName: 'Appointments',)),
         );
-      },
-      child: const Text("View Appointments"),
-    );
-  }
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AppointmentsPage(savedAppointments: savedAppointments)),
+        );
+      }
+    },
+    child: const Text('View Appointments'),
+  );
+}
+
 
   Widget _viewMedication() {
     return ElevatedButton(
