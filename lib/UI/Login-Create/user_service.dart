@@ -13,7 +13,7 @@ class UserService {
 
     if (response.statusCode == 201) {
       final data = json.decode(response.body);
-      return data['user_id']; // return new user ID
+      return data['user_id']; 
     } else {
       throw Exception('Registration failed: ${response.body}');
     }

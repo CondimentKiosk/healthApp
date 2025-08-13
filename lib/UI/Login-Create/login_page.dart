@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
       final role = loginData['role'];
       final patientId = loginData['patient_id'];
       
-      await AccessRights.load(userId, patientId);
+await AccessRights.load(userId.toString(), patientId.toString());
 
       
       Navigator.pushReplacement(

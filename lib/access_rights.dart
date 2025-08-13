@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 class AccessRights {
   static final Map<String, String> rights = {};
 
-  static Future<void> load(String carerId, String patientId) async {
+  static Future<void> load(dynamic carerId, dynamic patientId) async {
     final url = Uri.parse(
-      'http://192.168.0.28:4000/$carerId/$patientId',
+      'http://192.168.0.28:4000/permissions/$carerId/$patientId',
     );
 
     final response = await http.get(url);

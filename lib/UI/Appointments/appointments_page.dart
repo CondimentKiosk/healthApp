@@ -16,6 +16,9 @@ class AppointmentsPage extends StatefulWidget {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
+      final canEditAppointments = AccessRights.has('appointment', 'edit');
+
+
   void _editAppointment(int index, Appointment updatedAppointment) {
     setState(() {
       widget.savedAppointments[index] = updatedAppointment;
@@ -52,6 +55,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget build(BuildContext context) {
     final hasAppointments = widget.savedAppointments.isNotEmpty;
 
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -64,6 +68,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("No Appointments saved yet!"),
+                  if (canEditAppointments) ...[
                   const Text("Add new Appointment"),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
@@ -87,8 +92,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         ),
                       );
                     },
-                    label: const Text(""),
+                    label: const Text("Add Appointment"),
                   ),
+                ],
                 ],
               ),
             ),
@@ -98,7 +104,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget buildUI() {
     return Column(
       children: [
-        if (AccessRights.has('appointments', 'write')) _createManualAppt(),
+        if (canEditAppointments) _createManualAppt(),
         ToggleButtons(
           isSelected: [isCalendarView, !isCalendarView],
           onPressed: (index) {
@@ -183,7 +189,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-              if (AccessRights.has('appointments', 'write'))
+              if (canEditAppointments)
                 _editAppointmentsButton(context, appt, index),
             ],
           ),

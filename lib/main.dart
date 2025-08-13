@@ -84,9 +84,11 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 20),
           _styledButton(_viewMedication()),
           const SizedBox(height: 20),
-          _styledButton(_viewHealthDiary()),
+          if (AccessRights.has('health_diary', 'edit'))
+            _styledButton(_viewHealthDiary()),
           const SizedBox(height: 20),
           _styledButton(_viewHealthReport()),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -117,36 +119,49 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
- Widget _viewAppointments() {
-  return ElevatedButton(
-    onPressed: () {
-      if (!AccessRights.has('appointments', 'read')) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => NoAccessPage(resourceName: 'Appointments',)),
-        );
-      } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => AppointmentsPage(savedAppointments: savedAppointments)),
-        );
-      }
-    },
-    child: const Text('View Appointments'),
-  );
-}
-
+  Widget _viewAppointments() {
+    return ElevatedButton(
+      onPressed: () {
+        if (!AccessRights.has('appointment', 'read')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoAccessPage(resourceName: 'Appointments'),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  AppointmentsPage(savedAppointments: savedAppointments),
+            ),
+          );
+        }
+      },
+      child: const Text('View Appointments'),
+    );
+  }
 
   Widget _viewMedication() {
     return ElevatedButton(
       onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                MedicationPage(savedMedications: savedMedications),
-          ),
-        );
+        if (!AccessRights.has('medication', 'read')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoAccessPage(resourceName: 'Medications'),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  MedicationPage(savedMedications: savedMedications),
+            ),
+          );
+        }
       },
       child: const Text("Open Medication"),
     );
@@ -177,12 +192,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _viewHealthReport() {
     return ElevatedButton(
       onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HealthRecordPage(healthReport: healthReport),
-          ),
-        );
+        if (!AccessRights.has('health_diary', 'read')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoAccessPage(resourceName: 'Health Report'),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  HealthRecordPage(healthReport: healthReport),
+            ),
+          );
+        }
       },
       child: const Text("Open Health Report"),
     );
