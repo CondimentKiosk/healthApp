@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:health_app/UI/Medication/create_medication_page.dart';
 import 'package:health_app/UI/Medication/edit_medication_page.dart';
+import 'package:health_app/access_rights.dart';
 
 class MedicationPage extends StatefulWidget {
   final List<Medication> savedMedications;
@@ -19,6 +20,8 @@ ok on selecting liquid dose isnt working
 
 */
 class _MedicationPageState extends State<MedicationPage> {
+  final canEditMedications = AccessRights.has('medication', 'edit');
+
   void _editMedication(int index, Medication updatedMed) {
     setState(() {
       widget.savedMedications[index] = updatedMed;
@@ -69,40 +72,43 @@ class _MedicationPageState extends State<MedicationPage> {
   @override
   Widget build(BuildContext context) {
     final hasMedication = widget.savedMedications.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(title: Text('Medications')),
-      body: hasMedication ? 
-      _buildUI() : 
-      Center(
+      body: hasMedication
+          ? _buildUI()
+          : Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("No Medications saved yet!"),
-                  const Text("Add new Medication"),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateMedication(
-                            savedMedications: widget.savedMedications,
-                            onSave: (newMed) {
-                              setState(() {
-                                widget.savedMedications.add(newMed);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Medication added!'),
-                                ),
-                              );
-                            },
+                  if (canEditMedications) ...[
+                    const Text("Add new Medication"),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateMedication(
+                              savedMedications: widget.savedMedications,
+                              onSave: (newMed) {
+                                setState(() {
+                                  widget.savedMedications.add(newMed);
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Medication added!'),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    label: const Text(""),
-                  ),
+                        );
+                      },
+                      label: const Text(""),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -111,7 +117,12 @@ class _MedicationPageState extends State<MedicationPage> {
 
   Widget _buildUI() {
     return SingleChildScrollView(
-      child: Column(children: [_createMedication(), _showMedications()]),
+      child: Column(
+        children: [
+          if (canEditMedications) _createMedication(),
+          _showMedications(),
+        ],
+      ),
     );
   }
 
@@ -126,55 +137,53 @@ class _MedicationPageState extends State<MedicationPage> {
       physics: AlwaysScrollableScrollPhysics(),
       itemCount: widget.savedMedications.length,
       itemBuilder: (context, index) {
-        
-      final med = widget.savedMedications[index];
+        final med = widget.savedMedications[index];
 
-      
-          final String unit = (med.medType.toLowerCase() == 'tablet')
-              ? (med.dosage == 1 ? 'tablet' : 'tablets')
-              : (med.medType.toLowerCase() == 'injection')
-              ? (med.dosage == 1 ? 'injection' : 'injections')
-              : 'ml';
+        final String unit = (med.medType.toLowerCase() == 'tablet')
+            ? (med.dosage == 1 ? 'tablet' : 'tablets')
+            : (med.medType.toLowerCase() == 'injection')
+            ? (med.dosage == 1 ? 'injection' : 'injections')
+            : 'ml';
 
-          final int daysRemaining = calculateDaysRemaining(med);
-          final int difference = (daysRemaining - med.reminderLevel).floor();
-          final bool needsReorder = calculateReorderSuggestion(med);
+        final int daysRemaining = calculateDaysRemaining(med);
+        final int difference = (daysRemaining - med.reminderLevel).floor();
+        final bool needsReorder = calculateReorderSuggestion(med);
 
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(
-                    "${med.name}: Taking ${med.dosage} $unit\n${med.frequency} time${med.frequency > 1 ? 's' : ''} per ${med.frequencyType} ",
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  subtitle: Text(
-                    displayDaysRemaining(med),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              ListTile(
+                title: Text(
+                  "${med.name}: Taking ${med.dosage} $unit\n${med.frequency} time${med.frequency > 1 ? 's' : ''} per ${med.frequencyType} ",
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                subtitle: Text(
+                  displayDaysRemaining(med),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              if (canEditMedications)
                 _editMedicationButton(context, med, index),
 
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    needsReorder
-                        ? "Reorder required"
-                        : "Reorder in $difference days",
-                    style: TextStyle(
-                      color: needsReorder
-                          ? Colors.redAccent
-                          : const Color.fromARGB(255, 3, 116, 62),
-                      fontWeight: FontWeight.bold,
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  needsReorder
+                      ? "Reorder required"
+                      : "Reorder in $difference days",
+                  style: TextStyle(
+                    color: needsReorder
+                        ? Colors.redAccent
+                        : const Color.fromARGB(255, 3, 116, 62),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-          );
-        
-        }
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/access_rights.dart';
 import 'package:health_app/main.dart';
 import 'user_service.dart';
 
@@ -31,10 +32,11 @@ class _LoginPageState extends State<LoginPage> {
 
       final userId = loginData['user_id'];
       final role = loginData['role'];
+      final patientId = loginData['patient_id'];
+      
+await AccessRights.load(userId.toString(), patientId.toString());
 
-      print('Logged in userID : $userId');
-      print('Role : $role');
-
+      
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -64,7 +66,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Padding(
+      body: SafeArea(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -93,6 +96,7 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ),
+    )
     );
   }
 }
