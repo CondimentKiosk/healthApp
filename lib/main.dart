@@ -1,3 +1,5 @@
+import 'package:health_app/Services/globalAPIClient.dart';
+import 'package:health_app/Services/user_service.dart';
 import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
@@ -11,6 +13,7 @@ import 'package:health_app/access_rights.dart';
 import 'UI/Appointments/scanner_page.dart';
 
 void main() {
+  ApiClient.init();
   runApp(const MyApp());
 }
 
@@ -47,11 +50,9 @@ class MyHomePage extends StatefulWidget {
     super.key,
     required this.title,
     required this.userId,
-    required this.role,
   });
   final String title;
   final int userId;
-  final String role;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -62,11 +63,12 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Medication> savedMedications = [];
   List<SymptomEntry> healthReport = [];
   List<Symptom> symptoms = [];
+  int patientId = UserService.currentPatientId;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.title} (${widget.role})')),
+      appBar: AppBar(title: Text('${widget.title}')),
       body: _buildUI(),
     );
   }
@@ -157,8 +159,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  MedicationPage(savedMedications: savedMedications),
+              builder: (context) => MedicationPage(
+                savedMedications: savedMedications,
+                patientId: patientId,
+                carerId: widget.userId,
+              ),
             ),
           );
         }

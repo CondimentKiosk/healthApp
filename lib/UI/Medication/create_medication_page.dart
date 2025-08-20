@@ -34,6 +34,7 @@ class _CreateMedicationState extends State<CreateMedication> {
   void submitForm() {
     if (_formkey.currentState!.validate()){
       final newMed = Medication(
+        id: null,
         name: _nameController.text,
         medType: _medTypeController.text,
         dosage: num.parse(_dosageController.text.trim()),
@@ -44,6 +45,7 @@ class _CreateMedicationState extends State<CreateMedication> {
       );
 
       widget.onSave(newMed);
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(
         context,

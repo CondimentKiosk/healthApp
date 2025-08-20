@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/medication_service.dart';
 import 'package:health_app/UI/Medication/create_medication_page.dart';
 import 'package:health_app/UI/Medication/edit_medication_page.dart';
 import 'package:health_app/access_rights.dart';
 
 class MedicationPage extends StatefulWidget {
   final List<Medication> savedMedications;
+  final int carerId;
+  final int patientId;
 
-  const MedicationPage({super.key, required this.savedMedications});
+  const MedicationPage({
+    super.key,
+    required this.savedMedications,
+    required this.carerId,
+    required this.patientId,
+  });
 
   @override
   State<MedicationPage> createState() => _MedicationPageState();
@@ -21,11 +29,74 @@ ok on selecting liquid dose isnt working
 */
 class _MedicationPageState extends State<MedicationPage> {
   final canEditMedications = AccessRights.has('medication', 'edit');
+  final List<Medication> savedMedications = [];
+  bool isLoading = true;
 
-  void _editMedication(int index, Medication updatedMed) {
+  @override
+  void initState() {
+    super.initState();
+    _loadMedications();
+  }
+
+  Future<void> _loadMedications() async {
+    try {
+      final meds = await MedicationService().getMedicationsByPatient();
+      setState(() {
+        savedMedications.clear();
+        savedMedications.addAll(meds);
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to load medications: $e")));
+    }
+  }
+
+  Future<void> _addMedication(Medication newMed) async {
+  setState(() => savedMedications.add(newMed)); // optimistic update
+  try {
+    final savedMed = await MedicationService().createMedication(newMed);
     setState(() {
-      widget.savedMedications[index] = updatedMed;
+      final index = savedMedications.indexOf(newMed);
+      if (index != -1) savedMedications[index] = savedMed;
     });
+  } catch (e) {
+    setState(() => savedMedications.remove(newMed)); // rollback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to save medication: $e")),
+    );
+  }
+}
+
+
+  Future<void> _editMedication(int index, Medication updatedMed) async {
+    final oldMed = savedMedications[index];
+    setState(() => savedMedications[index] = updatedMed); // optimistic update
+
+    try {
+      await MedicationService().updateMedication(updatedMed.id!, updatedMed);
+    } catch (e) {
+      setState(() => savedMedications[index] = oldMed); // rollback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to update medication: $e")),
+      );
+    }
+  }
+
+  Future<void> _deleteMedication(int index) async {
+    final med = savedMedications[index];
+    setState(() => savedMedications.removeAt(index)); // optimistic update
+
+    try {
+      await MedicationService().deleteMedication(med.id!);
+    } catch (e) {
+      setState(() => savedMedications.insert(index, med)); // rollback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete medication: $e")),
+      );
+    }
   }
 
   //functions
@@ -71,10 +142,16 @@ class _MedicationPageState extends State<MedicationPage> {
   //builds
   @override
   Widget build(BuildContext context) {
-    final hasMedication = widget.savedMedications.isNotEmpty;
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final hasMedication = savedMedications.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Medications')),
+      appBar: AppBar(title: const Text('Medications')),
       body: hasMedication
           ? _buildUI()
           : Center(
@@ -82,33 +159,7 @@ class _MedicationPageState extends State<MedicationPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("No Medications saved yet!"),
-                  if (canEditMedications) ...[
-                    const Text("Add new Medication"),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateMedication(
-                              savedMedications: widget.savedMedications,
-                              onSave: (newMed) {
-                                setState(() {
-                                  widget.savedMedications.add(newMed);
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Medication added!'),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      label: const Text(""),
-                    ),
-                  ],
+                  if (canEditMedications) _createMedication(),
                 ],
               ),
             ),
@@ -180,6 +231,11 @@ class _MedicationPageState extends State<MedicationPage> {
                   ),
                 ),
               ),
+              if (canEditMedications)
+                ElevatedButton(
+                  onPressed: () => _deleteMedication(index),
+                  child: const Text("Delete"),
+                ),
             ],
           ),
         );
@@ -194,8 +250,11 @@ class _MedicationPageState extends State<MedicationPage> {
           context,
           MaterialPageRoute(
             builder: (context) => CreateMedication(
+              
               savedMedications: widget.savedMedications,
               onSave: (newMed) {
+                _addMedication(newMed);
+
                 setState(() {
                   widget.savedMedications.add(newMed);
                 });
@@ -233,8 +292,10 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 }
 
+
 //classes
 class Medication {
+  final int? id;
   final String name;
   final String medType;
   final num dosage;
@@ -245,6 +306,7 @@ class Medication {
   final num reminderLevel;
 
   Medication({
+    this.id,
     required this.name,
     required this.medType,
     required this.dosage,
@@ -256,10 +318,11 @@ class Medication {
 
   Map<String, dynamic> toMap() {
     return {
-      'name': name,
+      'medication_id': id,
+      'med_name': name,
       'medication_type': medType,
       'dosage': dosage,
-      'frequency': frequency,
+      'times_per': frequency,
       'frequency_type': frequencyType,
       'current_stock': numRemaining,
       'low_stock_alert': reminderLevel,
@@ -269,10 +332,11 @@ class Medication {
 
   factory Medication.fromMap(Map<String, dynamic> map) {
     return Medication(
-      name: map['name'],
+      id: map['medication_id'],
+      name: map['med_name'],
       medType: map['medication_type'],
       dosage: map['dosage'],
-      frequency: map['frequency'],
+      frequency: map['times_per'],
       frequencyType: map['frequency_type'],
       numRemaining: map['current_stock'],
       reminderLevel: map['low_stock_alert'],
