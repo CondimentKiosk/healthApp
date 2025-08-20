@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:health_app/UI/HealthDiary/symptom_selection.dart';
+import 'package:intl/intl.dart';
 
 class HealthDiaryPage extends StatefulWidget {
   final List<SymptomEntry> healthReport;
@@ -210,8 +211,31 @@ class SymptomEntry {
     required this.symptomRatings,
     this.notes,
   });
+
+
+Map<String, dynamic> toMap(){
+  final date = DateFormat('yyyy-MM-dd').format(timeStamp);
+final time = DateFormat('HH:mm:ss').format(timeStamp);
+  return{
+    'entry_date': date,
+    'entry_time': time,
+    'entry_notes': notes,
+    'symptoms': symptomRatings
+  };
 }
 
+factory SymptomEntry.fromMap(Map<String, dynamic> map) {
+    final date = map['entry_date'] as String;
+    final time = map['entry_time'] as String;
+    final dateTime = DateTime.parse('$date $time');
+
+    return SymptomEntry(
+      timeStamp: dateTime,
+      symptomRatings: Map<String, int>.from(map['symptoms'] ?? {}),
+      notes: map['entry_notes'],
+    );
+  }
+}
 class Symptom {
   final String name;
   final String? category;
