@@ -295,17 +295,22 @@ class Appointment {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'date': date.toIso8601String(), // Safe for saving to disk
-      'time': time,
-      'consultant': consultant,
-      'hospital': hospital,
-    };
-  }
+  return {
+    'apt_description': consultant,         
+    'date': date.toString().split(' ')[0], 
+    'time': time,                         
+    'doctor_id': null,                    
+    'category_id': null,                  
+    'location_id': null,                   
+    'apt_notes': hospital,                
+    'is_bookmarked': 0,                   
+  };
+}
+
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
-      date: DateTime.parse(map['date']), // Expects ISO string
+      date: DateTime.parse(map['date']), 
       time: map['time'],
       consultant: map['consultant'],
       hospital: map['hospital'],

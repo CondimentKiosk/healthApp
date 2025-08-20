@@ -257,24 +257,25 @@ class Medication {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'medType': medType,
+      'medication_type': medType,
       'dosage': dosage,
       'frequency': frequency,
-      'frequencyType': frequencyType,
-      'numRemaining': numRemaining,
-      'reminderLevel': reminderLevel,
+      'frequency_type': frequencyType,
+      'current_stock': numRemaining,
+      'low_stock_alert': reminderLevel,
+      'notes': null,
     };
   }
 
   factory Medication.fromMap(Map<String, dynamic> map) {
     return Medication(
       name: map['name'],
-      medType: map['medType'],
+      medType: map['medication_type'],
       dosage: map['dosage'],
       frequency: map['frequency'],
-      frequencyType: map['frequencyType'],
-      numRemaining: map['numRemaining'],
-      reminderLevel: map['reminderLevel'],
+      frequencyType: map['frequency_type'],
+      numRemaining: map['current_stock'],
+      reminderLevel: map['low_stock_alert'],
     );
   }
 
