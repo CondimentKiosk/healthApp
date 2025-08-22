@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:health_app/UI/Appointments/edit_appointments_page.dart';
 import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
-import 'package:health_app/access_rights.dart';
+import 'package:health_app/Services/access_rights.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 

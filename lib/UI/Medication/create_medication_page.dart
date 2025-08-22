@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/medication_services.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:numberpicker/numberpicker.dart';
 
@@ -32,30 +33,35 @@ class _CreateMedicationState extends State<CreateMedication> {
       TextEditingController();
 
   void submitForm() {
-    if (_formkey.currentState!.validate()){
+    if (_formkey.currentState!.validate()) {
       final newMed = Medication(
         name: _nameController.text,
         medType: _medTypeController.text,
         dosage: num.parse(_dosageController.text.trim()),
-        frequency: int.parse(_frequencyController.text.trim()), 
+        frequency: int.parse(_frequencyController.text.trim()),
         frequencyType: _frequencyTypeController.text,
         numRemaining: int.parse(_numRemainingController.text.trim()),
         reminderLevel: int.parse(_reminderLevelController.text.trim()),
       );
-
-      widget.onSave(newMed);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('New Medication Added!')));
-
-      _nameController.clear();
-      _medTypeController.clear();
-      _dosageController.clear();
-      _frequencyController.clear();
-      _frequencyTypeController.clear();
-      _numRemainingController.clear();
-      _reminderLevelController.clear();
+      
+      saveMedication(newMed)
+          .then((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('New Medication Added!')),
+            );
+            _nameController.clear();
+            _medTypeController.clear();
+            _dosageController.clear();
+            _frequencyController.clear();
+            _frequencyTypeController.clear();
+            _numRemainingController.clear();
+            _reminderLevelController.clear();
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Failed: $error')));
+          });
     }
   }
 
@@ -188,13 +194,12 @@ class _CreateMedicationState extends State<CreateMedication> {
     );
 
     if (picked != null) {
-  setState(() {
-    _dosageController.text = picked is double
-        ? picked.toStringAsFixed(1)
-        : picked.toString();
-  });
-}
-
+      setState(() {
+        _dosageController.text = picked is double
+            ? picked.toStringAsFixed(1)
+            : picked.toString();
+      });
+    }
   }
 
   Future<void> selectFrequency() async {

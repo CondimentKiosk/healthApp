@@ -6,7 +6,7 @@ import 'package:health_app/UI/Login-Create/login_page.dart';
 import 'package:health_app/UI/Login-Create/register_page.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:health_app/UI/no_access.dart';
-import 'package:health_app/access_rights.dart';
+import 'package:health_app/Services/access_rights.dart';
 
 import 'UI/Appointments/scanner_page.dart';
 
@@ -158,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  MedicationPage(savedMedications: savedMedications),
+                  MedicationPage(savedMedications: savedMedications, userId:AccessRights.userId!, patientId: AccessRights.patientId!),
             ),
           );
         }
