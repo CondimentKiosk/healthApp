@@ -111,25 +111,19 @@ class _MedicationPageState extends State<MedicationPage> {
                     const Text("Add new Medication"),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add),
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final newMed = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => CreateMedication(
-                              savedMedications: widget.savedMedications,
-                              onSave: (newMed) {
-                                setState(() {
-                                  widget.savedMedications.add(newMed);
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Medication added!'),
-                                  ),
-                                );
-                              },
-                            ),
+                            builder: (context) => CreateMedication(),
                           ),
                         );
+
+                        if (newMed != null && newMed is Medication) {
+                          setState(() {
+                            widget.savedMedications.add(newMed);
+                          });
+                        }
                       },
                       label: const Text(""),
                     ),
@@ -193,7 +187,7 @@ class _MedicationPageState extends State<MedicationPage> {
                 ),
               ),
               if (canEditMedications)
-                _editMedicationButton(context, med, index),
+                _editMedicationButton(med, index),
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
@@ -208,7 +202,8 @@ class _MedicationPageState extends State<MedicationPage> {
                   ),
                 ),
               ),
-              _deleteMedicationButton(med, index)
+              if(canEditMedications)
+              _deleteMedicationButton(med, index),
             ],
           ),
         );
@@ -218,93 +213,75 @@ class _MedicationPageState extends State<MedicationPage> {
 
   Widget _createMedication() {
     return ElevatedButton(
-      onPressed: () {
-        Navigator.push(
+      onPressed: () async {
+        final newMed = await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => CreateMedication(
-              savedMedications: widget.savedMedications,
-              onSave: (newMed) async {
-                try {
-                  await MedicationService.saveMedication(newMed);
-                  setState(() {
-                    widget.savedMedications.add(newMed);
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Medication Added!")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to save medication: $e")),
-                  );
-                }
-              },
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => CreateMedication()),
         );
+
+        if (newMed != null && newMed is Medication) {
+          setState(() {
+            widget.savedMedications.add(newMed);
+          });
+        }
       },
       child: const Text("Add Medication"),
     );
   }
 
   Widget _editMedicationButton(
-    BuildContext context,
     Medication med,
     int index,
   ) {
     return ElevatedButton(
-      onPressed: () {
-        Navigator.push(
+      onPressed: () async {
+        try{
+        final updatedMed = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => EditMedicationPage(
-              medication: med,
-              onSave: (updatedMed) async {
-                try {
-                  await MedicationService.updateMedication(updatedMed);
-                  setState(() {
-                    widget.savedMedications[index] = updatedMed;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Medication Updated!")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to update: $e")),
-                  );
-                }
-              },
-            ),
+            builder: (context) => EditMedicationPage(medication: med),
           ),
         );
+
+        if (updatedMed != null && updatedMed is Medication) {
+          setState(() {
+            widget.savedMedications[index] = updatedMed;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Medication Updated!")));
+        }
+        }catch(e){
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to edit medication: $e")),
+          );
+        }
       },
       child: const Text("Edit"),
     );
   }
 
-   Widget _deleteMedicationButton(Medication med, int index){
+  Widget _deleteMedicationButton(Medication med, int index) {
     return ElevatedButton(
       onPressed: () async {
-                try {
-                  await MedicationService.deleteMedication(med);
-                  setState(() {
-                    widget.savedMedications.removeAt(index);
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Medication Deleted!")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to delete medication: $e")),
-                  );
-                }
+        try {
+          await MedicationService.deleteMedication(med);
+          setState(() {
+            widget.savedMedications.removeAt(index);
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Medication Deleted!")));
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to delete medication: $e")),
+          );
+        }
       },
       child: const Text("Delete Medication"),
     );
   }
 }
-
-
 
 //classes
 class Medication {

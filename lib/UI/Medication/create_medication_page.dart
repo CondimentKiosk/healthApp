@@ -4,13 +4,10 @@ import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class CreateMedication extends StatefulWidget {
-  final List<Medication> savedMedications;
-  final Function(Medication) onSave;
 
   const CreateMedication({
     super.key,
-    required this.savedMedications,
-    required this.onSave,
+    
   });
 
   @override
@@ -56,6 +53,9 @@ class _CreateMedicationState extends State<CreateMedication> {
             _frequencyTypeController.clear();
             _numRemainingController.clear();
             _reminderLevelController.clear();
+
+                  Navigator.pop(context, newMed);
+
           })
           .catchError((error) {
             ScaffoldMessenger.of(

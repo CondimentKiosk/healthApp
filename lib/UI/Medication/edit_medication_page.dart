@@ -5,12 +5,10 @@ import 'package:numberpicker/numberpicker.dart';
 
 class EditMedicationPage extends StatefulWidget {
   final Medication medication;
-  final Function(Medication) onSave;
 
   const EditMedicationPage({
     super.key,
     required this.medication,
-    required this.onSave,
   });
 
   @override
@@ -65,9 +63,14 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
         reminderLevel: int.parse(_reminderLevelController.text),
       );
 
-     updateMedication(updatedMed);
-      Navigator.pop(context);
-    }
+     updateMedication(updatedMed).then((_) {
+      Navigator.pop(context, updatedMed);
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to update medication: $error")),
+      );
+    });
+  }
   }
 
   Future<void> selectMedType() async {

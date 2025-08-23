@@ -133,8 +133,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  AppointmentsPage(savedAppointments: savedAppointments),
+              builder: (_) => AppointmentsPage(
+                savedAppointments: savedAppointments,
+                patientId: AccessRights.patientId!,
+                userId: AccessRights.userId!,
+              ),
             ),
           );
         }
@@ -157,8 +160,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  MedicationPage(savedMedications: savedMedications, userId:AccessRights.userId!, patientId: AccessRights.patientId!),
+              builder: (context) => MedicationPage(
+                savedMedications: savedMedications,
+                userId: AccessRights.userId!,
+                patientId: AccessRights.patientId!,
+              ),
             ),
           );
         }

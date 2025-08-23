@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/appointment_services.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:intl/intl.dart';
 
 class ManualAppointmentEntry extends StatefulWidget {
-  final List<Appointment> appointments;
-  final Function(Appointment) onSave;
-
-  const ManualAppointmentEntry({
-    super.key,
-    required this.appointments,
-    required this.onSave,
-  });
+  const ManualAppointmentEntry({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -38,16 +32,23 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
             : 'N/A',
       );
 
-      widget.onSave(newAppt);
+      saveAppointment(newAppt)
+          .then((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Appointment added manually!')),
+            );
+            _dateController.clear();
+            _timeController.clear();
+            _consultantController.clear();
+            _hospitalController.clear();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment added manually!')),
-      );
-
-      _dateController.clear();
-      _timeController.clear();
-      _consultantController.clear();
-      _hospitalController.clear();
+            Navigator.pop(context, newAppt);
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to add medication $error')),
+            );
+          });
     }
   }
 
@@ -68,18 +69,18 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
   }
 
   Future<void> selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(context: context, 
-    initialTime: TimeOfDay.now(),
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
     );
     if (picked != null) {
-    // ignore: use_build_context_synchronously
-    final formatted = picked.format(context); 
-    setState(() {
-      _timeController.text = formatted;
-    });
+      // ignore: use_build_context_synchronously
+      final formatted = picked.format(context);
+      setState(() {
+        _timeController.text = formatted;
+      });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -94,9 +95,7 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
               TextFormField(
                 controller: _dateController,
                 readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Date',
-                ),
+                decoration: InputDecoration(labelText: 'Date'),
                 validator: (value) => value!.isEmpty ? 'Enter a date' : null,
                 onTap: selectDate,
               ),

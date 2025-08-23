@@ -11,10 +11,13 @@ import 'package:intl/intl.dart';
 
 class ScannerPage extends StatefulWidget {
   final List<Appointment> savedAppointments;
-    final void Function(Appointment) onSaveAppointment;
+  final void Function(Appointment) onSaveAppointment;
 
-
-  const ScannerPage({super.key, required this.savedAppointments, required this.onSaveAppointment});
+  const ScannerPage({
+    super.key,
+    required this.savedAppointments,
+    required this.onSaveAppointment,
+  });
 
   @override
   State<ScannerPage> createState() => _ScannerPageState();
@@ -63,8 +66,8 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   DateTime parseExtractedDate(String raw) {
-    final baseDate = raw.
-        toLowerCase()
+    final baseDate = raw
+        .toLowerCase()
         .replaceAll(
           RegExp(
             r'\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b',
@@ -175,7 +178,7 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 
-Widget _styledButton(Widget button) {
+  Widget _styledButton(Widget button) {
     return SizedBox(width: double.infinity, child: button);
   }
 
@@ -209,17 +212,33 @@ Widget _styledButton(Widget button) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Text(
+          Text(
             '📋 Appointment Info',
-  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          if (extracted['date'] != null) Text('📅 Date: ${extracted['date']}', style: Theme.of(context).textTheme.headlineSmall),
-          if (extracted['time'] != null) Text('⏰ Time: ${extracted['time']}', style: Theme.of(context).textTheme.headlineSmall),
+          if (extracted['date'] != null)
+            Text(
+              '📅 Date: ${extracted['date']}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          if (extracted['time'] != null)
+            Text(
+              '⏰ Time: ${extracted['time']}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
           if (extracted['consultant'] != null)
-            Text('🧑‍⚕️ Consultant: ${extracted['consultant']}', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              '🧑‍⚕️ Consultant: ${extracted['consultant']}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
           if (extracted['hospital'] != null)
-            Text('🏥 Hospital: ${extracted['hospital']}', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              '🏥 Hospital: ${extracted['hospital']}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
         ],
       ),
     );
@@ -243,9 +262,7 @@ Widget _styledButton(Widget button) {
   Widget _uploadImage() {
     return ElevatedButton(
       onPressed: () {
-       
-          pickImage();
-        
+        pickImage();
       },
       child: const Text("Upload Image"),
     );
@@ -255,7 +272,7 @@ Widget _styledButton(Widget button) {
     if (extracted.isEmpty) return const SizedBox.shrink();
 
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         final extractedDate = parseExtractedDate(extracted['date'] ?? '');
 
         final newAppt = Appointment(
@@ -265,13 +282,14 @@ Widget _styledButton(Widget button) {
           hospital: extracted['hospital'] ?? 'N/A',
         );
 
-      widget.onSaveAppointment(newAppt); 
+        widget.onSaveAppointment(newAppt);
 
-        setState(() {
+        await saveAppointment(newAppt);
+
+      setState(() {
+        widget.savedAppointments.add(newAppt);
         extracted.clear();
-        });
-
-        saveAppointment(newAppt);
+      });
 
         ScaffoldMessenger.of(
           context,
@@ -281,39 +299,48 @@ Widget _styledButton(Widget button) {
     );
   }
 }
+
 class Appointment {
+  final int? appointment_id;
   final DateTime date;
   final String time;
   final String consultant;
   final String hospital;
 
   Appointment({
+    this.appointment_id,
     required this.date,
     required this.time,
     required this.consultant,
     required this.hospital,
   });
 
-  Map<String, dynamic> toMap() {
-  return {
-    'apt_description': consultant,         
-    'date': date.toString().split(' ')[0], 
-    'time': time,                         
-    'doctor_id': null,                    
-    'category_id': null,                  
-    'location_id': null,                   
-    'apt_notes': hospital,                
-    'is_bookmarked': 0,                   
-  };
-}
+  Map<String, dynamic> toMap({bool includeId = false}) {
+    final map = {
+      'apt_description': null,
+      'date': date.toString().split(' ')[0],
+      'time': time,
+      'doctor': consultant,
+      'category_id': null,
+      'location': hospital,
+      'apt_notes': null,
+      'is_bookmarked': 0,
+    };
 
+    if (includeId && appointment_id != null) {
+      map['appointment_id'] = appointment_id;
+    }
+
+    return map;
+  }
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
-      date: DateTime.parse(map['date']), 
+      appointment_id: map['appointment_id'],
+      date: DateTime.parse(map['date']),
       time: map['time'],
-      consultant: map['consultant'],
-      hospital: map['hospital'],
+      consultant: map['doctor'],
+      hospital: map['location'],
     );
   }
 

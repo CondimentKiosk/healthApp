@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/appointment_services.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:intl/intl.dart';
 
 class EditAppointmentsPage extends StatefulWidget {
   final Appointment appointment;
-  final Function(Appointment) onSave;
 
-  const EditAppointmentsPage({
-    super.key,
-    required this.appointment,
-    required this.onSave,
-  });
+  const EditAppointmentsPage({super.key, required this.appointment});
 
   @override
   State<EditAppointmentsPage> createState() => _EditAppointmentsPageState();
@@ -43,15 +39,22 @@ class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
   void submitForm() {
     if (_formKey.currentState!.validate()) {
       final parsedDate = DateFormat('dd/MM/yyyy').parse(_dateController.text);
-      final updated = Appointment(
+      final updatedAppt = Appointment(
         date: parsedDate,
         time: _timeController.text,
         consultant: _consultantController.text,
         hospital: _hospitalController.text,
       );
 
-      widget.onSave(updated);
-      Navigator.pop(context);
+      updateAppointment(updatedAppt)
+          .then((_) {
+            Navigator.pop(context, updatedAppt);
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Failed to update appointment $error")),
+            );
+          });
     }
   }
 
