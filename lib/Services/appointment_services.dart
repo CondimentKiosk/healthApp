@@ -38,6 +38,7 @@ Future<List<Appointment>> getAppointmentsForPatient(int? patientId) async {
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
+
     final List<dynamic> data = jsonDecode(response.body);
     return data.map((json) => Appointment.fromMap(json)).toList();
   } else {

@@ -336,11 +336,12 @@ class Appointment {
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
-      appointment_id: map['appointment_id'],
-      date: DateTime.parse(map['date']),
-      time: map['time'],
-      consultant: map['doctor'],
-      hospital: map['location'],
+       date: map['date'] != null && map['date'].toString().isNotEmpty
+          ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
+          : DateTime.now(), // fallback if null
+      time: map['time']?.toString() ?? "", // fallback empty string
+      consultant: map['doctor']?.toString() ?? "Unknown Doctor", // fallback
+      hospital: map['location']?.toString() ?? "Unknown Location", // fallback
     );
   }
 

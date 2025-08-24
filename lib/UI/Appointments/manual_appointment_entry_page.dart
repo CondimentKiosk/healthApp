@@ -110,11 +110,13 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
                 controller: _hospitalController,
                 decoration: InputDecoration(labelText: 'Hospital'),
                 validator: (value) =>
-                    value!.isEmpty ? 'Enter a hospital' : null,
+                    value!.isEmpty ? 'Enter a location' : null,
               ),
               TextFormField(
                 controller: _consultantController,
-                decoration: InputDecoration(labelText: 'Consultant (optional)'),
+                decoration: InputDecoration(labelText: 'Consultant'),
+                 validator: (value) =>
+                    value!.isEmpty ? 'Enter a doctor' : null,
               ),
               SizedBox(height: 20),
               ElevatedButton(
