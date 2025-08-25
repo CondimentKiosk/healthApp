@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/medication_services.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:numberpicker/numberpicker.dart';
 
 class EditMedicationPage extends StatefulWidget {
   final Medication medication;
-  final Function(Medication) onSave;
 
   const EditMedicationPage({
     super.key,
     required this.medication,
-    required this.onSave,
   });
 
   @override
@@ -24,7 +23,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
   late TextEditingController _dosageController = TextEditingController();
   late TextEditingController _frequencyController = TextEditingController();
   late TextEditingController _frequencyTypeController = TextEditingController();
-   final TextEditingController _combinedFrequencyController =
+  final TextEditingController _combinedFrequencyController =
       TextEditingController();
   late TextEditingController _numRemainingController = TextEditingController();
   late TextEditingController _reminderLevelController = TextEditingController();
@@ -54,6 +53,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
   void submitForm() {
     if (_formkey.currentState!.validate()) {
       final updatedMed = Medication(
+        medication_id: widget.medication.medication_id,
         name: _nameController.text,
         medType: _medTypeController.text,
         dosage: int.parse(_dosageController.text),
@@ -63,9 +63,14 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
         reminderLevel: int.parse(_reminderLevelController.text),
       );
 
-      widget.onSave(updatedMed);
-      Navigator.pop(context);
-    }
+     updateMedication(updatedMed).then((_) {
+      Navigator.pop(context, updatedMed);
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to update medication: $error")),
+      );
+    });
+  }
   }
 
   Future<void> selectMedType() async {
@@ -103,7 +108,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
     double selectedMl = 5.0;
     int selectedInject = 1;
 
-    final picked = await showDialog<int>(
+    final picked = await showDialog<num>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -165,7 +170,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 ],
               );
             } else {
-              content = const Text("Unsupported");
+              content = const Text("Please select medication type");
             }
             return AlertDialog(
               title: Text("Select Dosage"),
@@ -174,18 +179,19 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 TextButton(
                   child: Text("OK"),
                   onPressed: () {
-                    int dosage;
                     if (_medTypeController.text == "Tablet") {
-                      dosage = selectedTablets;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedTablets);
+                      });
                     } else if (_medTypeController.text == "Liquid") {
-                      dosage = selectedMl as int;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedMl);
+                      });
                     } else if (_medTypeController.text == "Injection") {
-                      dosage = selectedInject;
-                    } else {
-                      dosage = 0;
+                      Future.microtask(() {
+                        Navigator.of(context).pop(selectedInject);
+                      });
                     }
-
-                    Navigator.of(context).pop(dosage);
                   },
                 ),
               ],
@@ -197,12 +203,14 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
 
     if (picked != null) {
       setState(() {
-        _dosageController.text = picked.toString();
+        _dosageController.text = picked is double
+            ? picked.toStringAsFixed(1)
+            : picked.toString();
       });
     }
   }
 
-   Future<void> selectFrequency() async {
+  Future<void> selectFrequency() async {
     int frequency = 1;
     String frequencyType = "Day";
 
@@ -362,13 +370,23 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 validator: (value) => value!.isEmpty ? "Enter a Name" : null,
               ),
               TextFormField(
+                controller: _medTypeController,
+                readOnly: true,
+                decoration: InputDecoration(labelText: "Medication Type"),
+                validator: (value) =>
+                    value!.isEmpty ? "Select a Medication Type" : null,
+                onTap: selectMedType, // <-- important
+              ),
+
+              TextFormField(
                 controller: _dosageController,
                 decoration: InputDecoration(labelText: "Dosage"),
                 validator: (value) => value!.isEmpty ? "Enter a Dosage" : null,
                 onTap: selectDosage,
               ),
               TextFormField(
-                controller: _frequencyController,
+                controller: _combinedFrequencyController,
+                readOnly: true,
                 decoration: InputDecoration(
                   labelText: "How Often is your Dosage?",
                 ),

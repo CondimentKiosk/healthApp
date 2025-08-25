@@ -6,7 +6,7 @@ import 'package:health_app/UI/Login-Create/login_page.dart';
 import 'package:health_app/UI/Login-Create/register_page.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:health_app/UI/no_access.dart';
-import 'package:health_app/access_rights.dart';
+import 'package:health_app/Services/access_rights.dart';
 
 import 'UI/Appointments/scanner_page.dart';
 
@@ -133,8 +133,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  AppointmentsPage(savedAppointments: savedAppointments),
+              builder: (_) => AppointmentsPage(
+                savedAppointments: savedAppointments,
+                patientId: AccessRights.patientId!,
+                userId: AccessRights.userId!,
+              ),
             ),
           );
         }
@@ -157,8 +160,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  MedicationPage(savedMedications: savedMedications),
+              builder: (context) => MedicationPage(
+                savedMedications: savedMedications,
+                userId: AccessRights.userId!,
+                patientId: AccessRights.patientId!,
+              ),
             ),
           );
         }
@@ -174,6 +180,8 @@ class _MyHomePageState extends State<MyHomePage> {
           context,
           MaterialPageRoute(
             builder: (context) => HealthDiaryPage(
+              patientId: AccessRights.patientId!,
+              userId: AccessRights.userId!,
               healthReport: healthReport,
               symptoms: symptoms,
               onSave: (SymptomEntry entry) {
@@ -203,8 +211,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  HealthRecordPage(healthReport: healthReport),
+              builder: (context) => HealthRecordPage(
+                patientId: AccessRights.patientId!,
+                userId: AccessRights.userId!,
+                healthReport: healthReport,
+              ),
             ),
           );
         }

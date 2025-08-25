@@ -1,28 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/appointment_services.dart'
+    as AppointmentService;
 import 'package:health_app/UI/Appointments/edit_appointments_page.dart';
 import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
-import 'package:health_app/access_rights.dart';
+import 'package:health_app/Services/access_rights.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class AppointmentsPage extends StatefulWidget {
   final List<Appointment> savedAppointments;
+  final int patientId;
+  final int userId;
 
-  const AppointmentsPage({super.key, required this.savedAppointments});
+  const AppointmentsPage({
+    super.key,
+    required this.savedAppointments,
+    required this.patientId,
+    required this.userId,
+  });
 
   @override
   State<AppointmentsPage> createState() => _AppointmentsPageState();
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
-      final canEditAppointments = AccessRights.has('appointment', 'edit');
+  final canEditAppointments = AccessRights.has('appointment', 'edit');
 
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointments();
+  }
 
-  void _editAppointment(int index, Appointment updatedAppointment) {
-    setState(() {
-      widget.savedAppointments[index] = updatedAppointment;
-    });
+  Future<void> _loadAppointments() async {
+    try {
+      final appts = await AppointmentService.getAppointmentsForPatient(
+        widget.patientId,
+      );
+      setState(() {
+        widget.savedAppointments.clear();
+        widget.savedAppointments.addAll(appts);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to load Appointments : $e")),
+      );
+    }
   }
 
   DateTime focusedDay = DateTime.now();
@@ -55,7 +79,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget build(BuildContext context) {
     final hasAppointments = widget.savedAppointments.isNotEmpty;
 
-
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -69,32 +92,26 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 children: [
                   const Text("No Appointments saved yet!"),
                   if (canEditAppointments) ...[
-                  const Text("Add new Appointment"),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManualAppointmentEntry(
-                            appointments: widget.savedAppointments,
-                            onSave: (newAppt) {
-                              setState(() {
-                                widget.savedAppointments.add(newAppt);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Appointment added!'),
-                                ),
-                              );
-                            },
+                    const Text("Add new Appointment"),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      onPressed: () async {
+                        final newAppt = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManualAppointmentEntry(),
                           ),
-                        ),
-                      );
-                    },
-                    label: const Text("Add Appointment"),
-                  ),
-                ],
+                        );
+
+                        if (newAppt != null && newAppt is Appointment) {
+                          setState(() {
+                            widget.savedAppointments.add(newAppt);
+                          });
+                        }
+                      },
+                      label: const Text("Add Appointments"),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -104,7 +121,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget buildUI() {
     return Column(
       children: [
-        if (canEditAppointments) _createManualAppt(),
+        if (canEditAppointments) _createAppointment(),
         ToggleButtons(
           isSelected: [isCalendarView, !isCalendarView],
           onPressed: (index) {
@@ -122,48 +139,71 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
-  Widget _editAppointmentsButton(
-    BuildContext context,
-    Appointment appt,
-    int index,
-  ) {
+  Widget _editAppointmentsButton(Appointment appt, int index) {
     return ElevatedButton(
-      onPressed: () {
-        Navigator.push(
+      onPressed: () async {
+        final updatedAppt = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => EditAppointmentsPage(
-              appointment: appt,
-              onSave: (updatedAppt) => _editAppointment(index, updatedAppt),
-            ),
+            builder: (context) => EditAppointmentsPage(appointment: appt),
           ),
         );
+
+        if (updatedAppt != null && updatedAppt is Appointment) {
+          setState(() {
+            widget.savedAppointments[index] = updatedAppt;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Appointment Updated")));
+        }
       },
       child: const Text('Edit'),
     );
   }
 
-  Widget _createManualAppt() {
+  Widget _createAppointment() {
     return ElevatedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ManualAppointmentEntry(
-              appointments: widget.savedAppointments,
-              onSave: (newAppt) {
-                setState(() {
-                  widget.savedAppointments.add(newAppt);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appointment added!')),
-                );
-              },
-            ),
-          ),
-        );
+      onPressed: () async {
+        try {
+          final newAppt = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ManualAppointmentEntry()),
+          );
+
+          if (newAppt != null && newAppt is Appointment) {
+            setState(() {
+              widget.savedAppointments.add(newAppt);
+            });
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to edit medication: $e")),
+          );
+        }
       },
-      child: const Text("Add Appointment"),
+      child: const Text("Add Appointments"),
+    );
+  }
+
+  Widget _deleteAppointmentButton(Appointment appt, int index) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          await AppointmentService.deleteAppointment(appt);
+          setState(() {
+            widget.savedAppointments.removeAt(index);
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Appointment Deleted!")));
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to delete appointment: $e")),
+          );
+        }
+      },
+      child: const Text("Delete Medication"),
     );
   }
 
@@ -189,8 +229,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-              if (canEditAppointments)
-                _editAppointmentsButton(context, appt, index),
+              if (canEditAppointments) _editAppointmentsButton(appt, index),
+              if (canEditAppointments) _deleteAppointmentButton(appt, index),
             ],
           ),
         );

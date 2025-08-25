@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/symptom_services.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SymptomSelectionPage extends StatefulWidget {
-  final List<Symptom> predefinedSymptoms;
-  
+  final List<Symptom> userSymptoms;
+  final int patientId;
+  final List<Symptom> trackedSymptoms;
 
   const SymptomSelectionPage({
     super.key,
-    required this.predefinedSymptoms,
+    required this.userSymptoms,
+    required this.patientId,
+    required this.trackedSymptoms,
   });
 
   @override
@@ -20,66 +23,64 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
   List<String> customSymptoms = [];
   final TextEditingController _symptomNameController = TextEditingController();
 
-  late SharedPreferences prefs;
-
   @override
-  void initState(){
+  void initState() {
     super.initState();
-    loadStoredSymptoms();
+  selectedSymptomNames = widget.trackedSymptoms.map((sym) => sym.name).toList();
   }
 
-  Future<void> loadStoredSymptoms() async {
-    prefs = await SharedPreferences.getInstance();
-    setState(() {
-      selectedSymptomNames = prefs.getStringList('trackedSymptoms')?? [];
-      customSymptoms = prefs.getStringList('customSymptoms') ?? [];
-    });
-  }
 
   Future<void> saveSymptoms() async {
-  customSymptoms.removeWhere((sym) => !selectedSymptomNames.contains(sym));
+    final selected = widget.userSymptoms
+      .map((sym) => sym.name)
+      .where((name) => selectedSymptomNames.contains(name))
+      .toList();
 
-  await prefs.setStringList('trackedSymptoms', selectedSymptomNames);
-  await prefs.setStringList('customSymptoms', customSymptoms);
+      Navigator.pop(context, selected);
+  }
 
-  Navigator.pop(context, selectedSymptomNames);
-}
-
-
-  void addCustomSymptom(){
+  Future<void> addCustomSymptom() async {
     String name = _symptomNameController.text.trim();
     String lowerName = name.toLowerCase();
-    if(name.isEmpty) return;
+    if (name.isEmpty) return;
 
     bool alreadyExists = [
-      ...widget.predefinedSymptoms.map((sym)=>sym.name),
-      ...customSymptoms
-    ].any((sym)=>sym.toLowerCase()==lowerName);
-    
-    if(alreadyExists){
+      ...widget.userSymptoms.map((sym) => sym.name),
+      ...customSymptoms,
+    ].any((sym) => sym.toLowerCase() == lowerName);
+
+    if (alreadyExists) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Symptom '$name' already tracked"))
+        SnackBar(content: Text("Symptom '$name' already tracked")),
       );
       return;
     }
     final capitalised = capitalise(name);
+    try {
+      await saveCustomSymptom(widget.patientId, capitalised);
 
-    setState(() {
-      customSymptoms.add(capitalised);
-      selectedSymptomNames.add(capitalised);
-    });
+      setState(() {
+      widget.userSymptoms.add(Symptom(name: capitalised, patientId: widget.patientId));
+        selectedSymptomNames.add(capitalised);
+        customSymptoms.add(capitalised);
+      });
 
-    _symptomNameController.clear();
+      _symptomNameController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to save symptom: $e")));
+    }
   }
 
-  String capitalise(String text){
-    if(text.isEmpty) return text;
+  String capitalise(String text) {
+    if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final predefined = widget.predefinedSymptoms.map((sym)=> sym.name).toSet();
+    final predefined = widget.userSymptoms.map((sym) => sym.name).toSet();
     final allSymptoms = {
       ...predefined,
       ...customSymptoms,
@@ -90,45 +91,48 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
       appBar: AppBar(title: const Text("Select Symptoms")),
       body: Column(
         children: [
-          Expanded(child: ListView(
-            children : allSymptoms.map((name){
-              return CheckboxListTile(
-                title: Text(name),
-                value: selectedSymptomNames.contains(name), 
-                onChanged: (value){
-                  setState(() {
-                    if(value==true){
-                      selectedSymptomNames.add(name);
-                    }else{
-                      selectedSymptomNames.remove(name);
-                    }
-                  });
-                }
+          Expanded(
+            child: ListView(
+              children: allSymptoms.map((name) {
+                return CheckboxListTile(
+                  title: Text(name),
+                  value: selectedSymptomNames.contains(name),
+                  onChanged: (value) {
+                    setState(() {
+                      if (value == true) {
+                        selectedSymptomNames.add(name);
+                      } else {
+                        selectedSymptomNames.remove(name);
+                      }
+                    });
+                  },
                 );
-            }).toList(),
-          ),
+              }).toList(),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Expanded(child: TextField(
-                  controller: _symptomNameController,
-                  decoration: const InputDecoration(
-                    hintText: "Add a new symptom",
+                Expanded(
+                  child: TextField(
+                    controller: _symptomNameController,
+                    decoration: const InputDecoration(
+                      hintText: "Add a new symptom",
+                    ),
                   ),
-                )
                 ),
                 IconButton(
-                  onPressed: addCustomSymptom, 
-                  icon: const Icon(Icons.add)
-                  ),
+                  onPressed: addCustomSymptom,
+                  icon: const Icon(Icons.add),
+                ),
               ],
             ),
-            ),
-            ElevatedButton(
-              onPressed: saveSymptoms, 
-              child: const Text("Save Symptoms For Tracking"))
+          ),
+          ElevatedButton(
+            onPressed: saveSymptoms,
+            child: const Text("Save Symptoms For Tracking"),
+          ),
         ],
       ),
     );

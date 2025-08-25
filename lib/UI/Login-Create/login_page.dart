@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:health_app/access_rights.dart';
 import 'package:health_app/main.dart';
-import 'user_service.dart';
+import '../../Services/user_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -32,10 +31,6 @@ class _LoginPageState extends State<LoginPage> {
 
       final userId = loginData['user_id'];
       final role = loginData['role'];
-      final patientId = loginData['patient_id'];
-      
-await AccessRights.load(userId.toString(), patientId.toString());
-
       
       Navigator.pushReplacement(
         context,
