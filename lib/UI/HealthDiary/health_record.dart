@@ -1,33 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:health_app/Services/health_diary_services.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
 import 'package:intl/intl.dart';
 
 class HealthRecordPage extends StatefulWidget {
   final List<SymptomEntry> healthReport;
+  final int patientId;
+  final int userId;
 
-  const HealthRecordPage({super.key, required this.healthReport});
+  const HealthRecordPage({
+    super.key,
+    required this.healthReport,
+    required this.patientId,
+    required this.userId,
+  });
 
   @override
   State<HealthRecordPage> createState() => _HealthRecordPageState();
 }
 
 class _HealthRecordPageState extends State<HealthRecordPage> {
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHealthReport();
+  }
+
+  Future<void> _loadHealthReport() async {
+    try {
+      final entries = await getHealthReport(widget.patientId);
+      setState(() {
+        widget.healthReport.clear();
+        widget.healthReport.addAll(entries);
+      });
+    } catch (e) {
+      setState(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load health report: $e')),
+      );
+      });
+      
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Health Report"),),
-      body: _buildUI()
+      appBar: AppBar(title: const Text("Health Report")),
+      body: _buildUI(),
     );
   }
 
-  Widget _buildUI(){
+  Widget _buildUI() {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          _showHealthRecord()
-        ],
-      ),
+      child: Column(children: [_showHealthRecord()]),
     );
   }
 
@@ -44,13 +73,13 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
       itemCount: records.length,
       itemBuilder: (context, index) {
         final report = records[index];
-final date = DateFormat('dd/MM/yy @ h:mma').format(report.timeStamp);
+        final date = DateFormat('dd/MM/yy @ h:mma').format(report.timeStamp);
         final symptoms = report.symptomRatings;
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           child: ExpansionTile(
-title: Text(date),
+            title: Text(date),
             children: symptoms.entries.map<Widget>((entry) {
               final name = entry.key;
               final rating = entry.value;

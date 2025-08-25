@@ -180,6 +180,8 @@ class _MyHomePageState extends State<MyHomePage> {
           context,
           MaterialPageRoute(
             builder: (context) => HealthDiaryPage(
+              patientId: AccessRights.patientId!,
+              userId: AccessRights.userId!,
               healthReport: healthReport,
               symptoms: symptoms,
               onSave: (SymptomEntry entry) {
@@ -209,8 +211,11 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  HealthRecordPage(healthReport: healthReport),
+              builder: (context) => HealthRecordPage(
+                patientId: AccessRights.patientId!,
+                userId: AccessRights.userId!,
+                healthReport: healthReport,
+              ),
             ),
           );
         }

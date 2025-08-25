@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:health_app/Services/health_diary_services.dart';
+import 'package:health_app/Services/symptom_services.dart';
 import 'package:health_app/UI/HealthDiary/symptom_selection.dart';
 import 'package:intl/intl.dart';
 
@@ -6,12 +8,16 @@ class HealthDiaryPage extends StatefulWidget {
   final List<SymptomEntry> healthReport;
   final List<Symptom> symptoms;
   final Function(SymptomEntry) onSave;
+  final int patientId;
+  final int userId;
 
   const HealthDiaryPage({
     super.key,
     required this.healthReport,
     required this.symptoms,
     required this.onSave,
+    required this.patientId,
+    required this.userId,
   });
 
   @override
@@ -32,9 +38,9 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
     }
   }
 
-  void toggleIgnore(String name, bool? value) {
+  void toggleIgnore(String name, bool? selected) {
     setState(() {
-      if (value == true) {
+      if (selected == true) {
         ignoredSymptoms.add(name);
       } else {
         ignoredSymptoms.remove(name);
@@ -42,7 +48,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
     });
   }
 
-  void saveEntry() {
+  Future<void> saveEntry() async {
     final Map<String, int> finalRatings = {};
 
     for (final name in ratings.keys) {
@@ -57,46 +63,61 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
     );
 
-    print("Saving entry: ${entry.symptomRatings}");
-    widget.onSave(entry);
-    Navigator.pop(context);
+    try {
+      await saveHealthEntry(entry);
+
+      widget.onSave(entry);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Diary entry saved!')));
+        Navigator.pop(context, entry);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save entry: $e')));
+      }
+    }
   }
 
   Future<void> goToSymptomSelector() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SymptomSelectionPage(
-          predefinedSymptoms: [
-            Symptom(name: "Pain"),
-            Symptom(name: "Fatigue"),
-            Symptom(name: "Sleep Quality"),
-            Symptom(name: "Mood"),
-            Symptom(name: "Nausea"),
-            Symptom(name: "Appetite"),
-            Symptom(name: "Level of activeness"),
-            Symptom(name: "Concentration"),
-            Symptom(name: "Memory"),
-          ],
+    try {
+      final symptoms = await getSymptoms(widget.patientId);
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SymptomSelectionPage(
+            userSymptoms: symptoms,
+            patientId: widget.patientId,
+            trackedSymptoms: widget.symptoms
+          ),
         ),
-      ),
-    );
-    if (result != null && mounted) {
-      final updatedSymptomNames = result as List<String>;
-      setState(() {
-        widget.symptoms
-          ..clear()
-          ..addAll(updatedSymptomNames.map((name) => Symptom(name: name)));
+      );
+      if (result != null && mounted) {
+        final updatedSymptomNames = result as List<String>;
+        setState(() {
+          widget.symptoms
+            ..clear()
+            ..addAll(updatedSymptomNames.map((name) => Symptom(name: name)));
 
-        ratings.clear();
-        for (final name in updatedSymptomNames) {
-          ratings.putIfAbsent(name, () => 5.0); // defaults to 5
-        }
-        ratings.removeWhere((key, _) => !updatedSymptomNames.contains(key));
-        ignoredSymptoms.removeWhere(
-          (name) => !updatedSymptomNames.contains(name),
-        );
-      });
+          ratings.clear();
+          for (final name in updatedSymptomNames) {
+            ratings.putIfAbsent(name, () => 5.0); // defaults to 5
+          }
+          ratings.removeWhere((key, _) => !updatedSymptomNames.contains(key));
+          ignoredSymptoms.removeWhere(
+            (name) => !updatedSymptomNames.contains(name),
+          );
+        });
+      }
+    } catch (e) {
+      print("Failed to load symptoms or navigate: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to open symptom selector: $e")),
+      );
     }
   }
 
@@ -202,44 +223,90 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
 // }
 
 class SymptomEntry {
+  int? entry_id;
   DateTime timeStamp;
   Map<String, int> symptomRatings;
   String? notes;
 
   SymptomEntry({
+    this.entry_id,
     required this.timeStamp,
     required this.symptomRatings,
     this.notes,
   });
 
+  Map<String, dynamic> toMap({bool includeId = false}) {
+    final date = DateFormat('yyyy-MM-dd').format(timeStamp);
+    final time = DateFormat('HH:mm:ss').format(timeStamp);
 
-Map<String, dynamic> toMap(){
-  final date = DateFormat('yyyy-MM-dd').format(timeStamp);
-final time = DateFormat('HH:mm:ss').format(timeStamp);
-  return{
-    'entry_date': date,
-    'entry_time': time,
-    'entry_notes': notes,
-    'symptoms': symptomRatings
-  };
-}
+    final symptomList = symptomRatings.entries
+        .map((e) => {'symptom_name': e.key, 'rating': e.value})
+        .toList();
 
-factory SymptomEntry.fromMap(Map<String, dynamic> map) {
-    final date = map['entry_date'] as String;
-    final time = map['entry_time'] as String;
-    final dateTime = DateTime.parse('$date $time');
+    final map = {
+      'entry_date': date,
+      'entry_time': time,
+      'entry_notes': notes,
+      'symptoms': symptomList,
+    };
+
+    // if(includeId && entry_id != null){
+    //   map['entry_id'] = entry_id;
+    // }
+
+    return map;
+  }
+
+  factory SymptomEntry.fromMap(Map<String, dynamic> map) {
+  final rawDate = map['entry_date']; // e.g. "2025-08-24T23:00:00.000Z"
+  DateTime dateTime;
+
+  if (rawDate != null && rawDate is String && rawDate.contains('T')) {
+    // ISO 8601 case
+    dateTime = DateTime.parse(rawDate);
+  } else {
+    // Fallback to your old format if backend still splits date/time
+    final dateStr = map['entry_date'] as String? ?? '';
+    final timeStr = map['entry_time'] as String? ?? '00:00:00';
+    dateTime = DateFormat('dd/MM/yy HH:mm:ss').parse('$dateStr $timeStr');
+  }
+
+    final symptomsList = map['symptoms'] as List<dynamic>? ?? [];
 
     return SymptomEntry(
+      entry_id: map['entry_id'],
       timeStamp: dateTime,
-      symptomRatings: Map<String, int>.from(map['symptoms'] ?? {}),
-      notes: map['entry_notes'],
+      symptomRatings: {
+      for (final e in symptomsList)
+        e['symptom_name'] as String: e['rating'] as int,
+    },notes: map['entry_notes'],
     );
   }
 }
-class Symptom {
-  final String name;
-  final String? category;
-  final String? desc;
 
-  Symptom({required this.name, this.category, this.desc});
+class Symptom {
+  final int? id;
+  final String name;
+  final bool? isPredefined;
+  final int? patientId;
+
+  Symptom({this.id, required this.name, this.isPredefined, this.patientId});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'symptom_id': id,
+      'symptom_name': name,
+      'is_predefined': isPredefined,
+      'patient_id': patientId,
+    };
+  }
+
+  factory Symptom.fromMap(Map<String, dynamic> map) {
+    return Symptom(
+      id: map['symptom_id'],
+      name: map['symptom_name'],
+      isPredefined: map['is_predefined'],
+      patientId: map['patient_id'],
+    );
+  }
 }
