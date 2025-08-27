@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:health_app/UI/Admin/admin_page.dart';
 import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
@@ -31,6 +33,7 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontSize: 16),
           titleLarge: TextStyle(fontSize: 25),
           labelLarge: TextStyle(fontSize: 25),
+          titleMedium: TextStyle(fontSize: 20, color: Color.fromARGB(255, 243, 2, 2))
         ),
       ),
       initialRoute: '/login',
@@ -62,6 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Medication> savedMedications = [];
   List<SymptomEntry> healthReport = [];
   List<Symptom> symptoms = [];
+  List<User> users = [];
+  List<UserPermission> resourceRights = [];
 
   @override
   Widget build(BuildContext context) {
@@ -84,10 +89,13 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 20),
           _styledButton(_viewMedication()),
           const SizedBox(height: 20),
-          if (AccessRights.has('health_diary', 'edit'))
+          if (AccessRights.has('health_diary', 'edit')) 
             _styledButton(_viewHealthDiary()),
           const SizedBox(height: 20),
           _styledButton(_viewHealthReport()),
+          const SizedBox(height: 20),
+          if (AccessRights.has('admin', 'admin'))
+            _styledButton(_viewAdminPage()),
           const SizedBox(height: 20),
         ],
       ),
@@ -221,6 +229,25 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
       child: const Text("Open Health Report"),
+    );
+  }
+
+  Widget _viewAdminPage() {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPage(
+              patientId: AccessRights.patientId!,
+              userId: AccessRights.userId!,
+              users: users,
+              resourceRights: resourceRights,
+            ),
+          ),
+        );
+      },
+      child: const Text("Open Admin Page"),
     );
   }
 }
