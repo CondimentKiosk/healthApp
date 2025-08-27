@@ -31,23 +31,54 @@ class _ScannerPageState extends State<ScannerPage> {
   final ImagePicker _picker = ImagePicker();
 
   // 📸 Image picker
-  Future<void> pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
+  Future<void> pickImage(ImageSource source) async {
+  final XFile? pickedFile = await _picker.pickImage(
+    source: source, // Camera or Gallery
+  );
 
-    if (pickedFile != null) {
-      final File imageFile = File(pickedFile.path);
-      final text = await extractText(imageFile);
-      final appointment = extractAppointmentDetails(text);
+  if (pickedFile != null) {
+    final File imageFile = File(pickedFile.path);
+    final text = await extractText(imageFile);
+    final appointment = extractAppointmentDetails(text);
 
-      setState(() {
-        selectedMedia = imageFile;
-        extractedText = text;
-        extracted = appointment;
-      });
-    }
+    setState(() {
+      selectedMedia = imageFile;
+      extractedText = text;
+      extracted = appointment;
+    });
   }
+}
+void _showImageSourceDialog(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a photo'),
+              onTap: () {
+                Navigator.pop(context);
+                pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
 
   // 🔍 OCR function
   Future<String> extractText(File imageFile) async {
@@ -262,7 +293,7 @@ class _ScannerPageState extends State<ScannerPage> {
   Widget _uploadImage() {
     return ElevatedButton(
       onPressed: () {
-        pickImage();
+        _showImageSourceDialog(context);
       },
       child: const Text("Upload Image"),
     );
@@ -336,6 +367,7 @@ class Appointment {
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
+      appointment_id: map['appointment_id'],
        date: map['date'] != null && map['date'].toString().isNotEmpty
           ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
           : DateTime.now(), // fallback if null

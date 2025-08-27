@@ -263,23 +263,45 @@ class _MedicationPageState extends State<MedicationPage> {
 
   Widget _deleteMedicationButton(Medication med, int index) {
     return ElevatedButton(
-      onPressed: () async {
+    onPressed: () async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Confirm Deletion"),
+            content: const Text("Are you sure you want to delete this medication?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false), // cancel
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true), // confirm
+                child: const Text("Delete"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm == true) {
         try {
           await MedicationService.deleteMedication(med);
           setState(() {
             widget.savedMedications.removeAt(index);
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Medication Deleted!")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Medication Deleted!")),
+          );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Failed to delete medication: $e")),
           );
         }
-      },
-      child: const Text("Delete Medication"),
-    );
+      }
+    },
+    child: Text("Delete Medication", style: Theme.of(context).textTheme.titleMedium),
+  );
   }
 }
 

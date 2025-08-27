@@ -187,25 +187,47 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _deleteAppointmentButton(Appointment appt, int index) {
-    return ElevatedButton(
-      onPressed: () async {
+  return ElevatedButton(
+    onPressed: () async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Confirm Deletion"),
+            content: const Text("Are you sure you want to delete this appointment?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false), // cancel
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true), // confirm
+                child: const Text("Delete"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm == true) {
         try {
           await AppointmentService.deleteAppointment(appt);
           setState(() {
             widget.savedAppointments.removeAt(index);
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Appointment Deleted!")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Appointment Deleted!")),
+          );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Failed to delete appointment: $e")),
           );
         }
-      },
-      child: const Text("Delete Medication"),
-    );
-  }
+      }
+    },
+    child: Text("Delete Appointment", style: Theme.of(context).textTheme.titleMedium),
+  );
+}
 
   Widget _listView() {
     return ListView.builder(
