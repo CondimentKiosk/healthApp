@@ -26,17 +26,18 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
   @override
   void initState() {
     super.initState();
-  selectedSymptomNames = widget.trackedSymptoms.map((sym) => sym.name).toList();
+    selectedSymptomNames = widget.trackedSymptoms
+        .map((sym) => sym.name)
+        .toList();
   }
-
 
   Future<void> saveSymptoms() async {
     final selected = widget.userSymptoms
-      .map((sym) => sym.name)
-      .where((name) => selectedSymptomNames.contains(name))
-      .toList();
+        .map((sym) => sym.name)
+        .where((name) => selectedSymptomNames.contains(name))
+        .toList();
 
-      Navigator.pop(context, selected);
+    Navigator.pop(context, selected);
   }
 
   Future<void> addCustomSymptom() async {
@@ -60,7 +61,9 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
       await saveCustomSymptom(widget.patientId, capitalised);
 
       setState(() {
-      widget.userSymptoms.add(Symptom(name: capitalised, patientId: widget.patientId));
+        widget.userSymptoms.add(
+          Symptom(name: capitalised, patientId: widget.patientId),
+        );
         selectedSymptomNames.add(capitalised);
         customSymptoms.add(capitalised);
       });
@@ -129,10 +132,12 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage> {
               ],
             ),
           ),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: saveSymptoms,
             child: const Text("Save Symptoms For Tracking"),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );

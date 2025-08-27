@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:health_app/Services/health_diary_services.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
@@ -20,8 +21,6 @@ class HealthRecordPage extends StatefulWidget {
 }
 
 class _HealthRecordPageState extends State<HealthRecordPage> {
-
-
   @override
   void initState() {
     super.initState();
@@ -38,13 +37,11 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
     } catch (e) {
       setState(() {
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load health report: $e')),
-      );
+          SnackBar(content: Text('Failed to load health report: $e')),
+        );
       });
-      
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +58,7 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
   }
 
   Widget _showHealthRecord() {
-    final records = widget.healthReport.reversed.toList();
+    final records = widget.healthReport.toList();
 
     if (records.isEmpty) {
       return const Center(child: Text("No health data yet"));
@@ -73,7 +70,11 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
       itemCount: records.length,
       itemBuilder: (context, index) {
         final report = records[index];
-        final date = DateFormat('dd/MM/yy @ h:mma').format(report.timeStamp);
+        final date = DateFormat(
+          'dd/MM/yy @ h:mma',
+        ).format(report.timeStamp.toLocal());
+        print("As local: ${report.timeStamp.toLocal()}");
+
         final symptoms = report.symptomRatings;
 
         return Card(

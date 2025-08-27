@@ -3,10 +3,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -32,53 +31,52 @@ class _ScannerPageState extends State<ScannerPage> {
 
   // 📸 Image picker
   Future<void> pickImage(ImageSource source) async {
-  final XFile? pickedFile = await _picker.pickImage(
-    source: source, // Camera or Gallery
-  );
+    final XFile? pickedFile = await _picker.pickImage(
+      source: source, // Camera or Gallery
+    );
 
-  if (pickedFile != null) {
-    final File imageFile = File(pickedFile.path);
-    final text = await extractText(imageFile);
-    final appointment = extractAppointmentDetails(text);
+    if (pickedFile != null) {
+      final File imageFile = File(pickedFile.path);
+      final text = await extractText(imageFile);
+      final appointment = extractAppointmentDetails(text);
 
-    setState(() {
-      selectedMedia = imageFile;
-      extractedText = text;
-      extracted = appointment;
-    });
+      setState(() {
+        selectedMedia = imageFile;
+        extractedText = text;
+        extracted = appointment;
+      });
+    }
   }
-}
-void _showImageSourceDialog(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
-              onTap: () {
-                Navigator.pop(context);
-                pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                pickImage(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
 
-
+  void _showImageSourceDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take a photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   // 🔍 OCR function
   Future<String> extractText(File imageFile) async {
@@ -168,14 +166,6 @@ void _showImageSourceDialog(BuildContext context) {
     }
 
     return info;
-  }
-
-  Future<void> saveAppointment(Appointment appt) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> stored = prefs.getStringList('appointments') ?? [];
-
-    stored.add(jsonEncode(appt.toMap()));
-    await prefs.setStringList('appointments', stored);
   }
 
   // 🧱 Full UI
@@ -270,6 +260,9 @@ void _showImageSourceDialog(BuildContext context) {
               '🏥 Hospital: ${extracted['hospital']}',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
+            Text("Extracted Info is not always accurate. Always double check your appointment information."
+            "\nYou can change any mistakes from the 'Save Appointment'",
+            style: Theme.of(context).textTheme.titleMedium,)
         ],
       ),
     );
@@ -304,27 +297,42 @@ void _showImageSourceDialog(BuildContext context) {
 
     return ElevatedButton(
       onPressed: () async {
-        final extractedDate = parseExtractedDate(extracted['date'] ?? '');
+        try {
+          // Convert map to Appointment
+          final extractedAppt = Appointment(
+            date: parseExtractedDate(extracted['date'] ?? ''),
+            time: extracted['time'] ?? '',
+            consultant: extracted['consultant'] ?? '',
+            hospital: extracted['hospital'] ?? '',
+          );
 
-        final newAppt = Appointment(
-          date: extractedDate,
-          time: extracted['time'] ?? '',
-          consultant: extracted['consultant'] ?? 'N/A',
-          hospital: extracted['hospital'] ?? 'N/A',
-        );
+          // Push to manual entry page with pre-filled data
+          final newAppt = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ManualAppointmentEntry(prefilledAppointment: extractedAppt, referenceImage: selectedMedia,),
+            ),
+          );
 
-        widget.onSaveAppointment(newAppt);
+          // Only add if the user confirmed
+          if (newAppt != null && newAppt is Appointment) {
+            setState(() {
+              widget.savedAppointments.add(newAppt);
+              extracted.clear(); // Clear scanned info
+              selectedMedia = null; // Optional: clear image
+              extractedText = null;
+            });
 
-        await saveAppointment(newAppt);
-
-      setState(() {
-        widget.savedAppointments.add(newAppt);
-        extracted.clear();
-      });
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Appointment Saved!")));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text("Appointment Saved!")));
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error saving appointment: $e")),
+          );
+        }
       },
       child: const Text("Save Appointment"),
     );
@@ -337,6 +345,8 @@ class Appointment {
   final String time;
   final String consultant;
   final String hospital;
+  final String? notes;
+  final String? imagePath; 
 
   Appointment({
     this.appointment_id,
@@ -344,6 +354,8 @@ class Appointment {
     required this.time,
     required this.consultant,
     required this.hospital,
+    this.notes,
+    this.imagePath,
   });
 
   Map<String, dynamic> toMap({bool includeId = false}) {
@@ -354,7 +366,8 @@ class Appointment {
       'doctor': consultant,
       'category_id': null,
       'location': hospital,
-      'apt_notes': null,
+      'apt_notes': notes,
+      'image_path': imagePath,
       'is_bookmarked': 0,
     };
 
@@ -368,12 +381,14 @@ class Appointment {
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
       appointment_id: map['appointment_id'],
-       date: map['date'] != null && map['date'].toString().isNotEmpty
+      date: map['date'] != null && map['date'].toString().isNotEmpty
           ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
-          : DateTime.now(), // fallback if null
-      time: map['time']?.toString() ?? "", // fallback empty string
-      consultant: map['doctor']?.toString() ?? "Unknown Doctor", // fallback
-      hospital: map['location']?.toString() ?? "Unknown Location", // fallback
+          : DateTime.now(),
+      time: map['time']?.toString() ?? "",
+      consultant: map['doctor'],
+      hospital: map['location'],
+      notes: map['apt_notes'],
+    imagePath: map['image_path']?.toString(),
     );
   }
 

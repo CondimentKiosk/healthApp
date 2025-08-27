@@ -232,11 +232,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _listView() {
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: AlwaysScrollableScrollPhysics(),
       itemCount: widget.savedAppointments.length,
       itemBuilder: (context, index) {
         final appt = widget.savedAppointments[index];
-
+  
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
@@ -247,7 +247,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 subtitle: Text(
-                  "Consultant: ${appt.consultant} at ${appt.hospital}",
+                  "Consultant: ${appt.consultant} at ${appt.hospital}"
+                  "${(appt.notes!=null && appt.notes!.isNotEmpty) ? "\nNotes: ${appt.notes}" : ""}",
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),

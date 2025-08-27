@@ -58,10 +58,11 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
     }
 
     final entry = SymptomEntry(
-      timeStamp: DateTime.now(),
+      timeStamp: DateTime.now().toUtc(),
       symptomRatings: finalRatings,
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
     );
+print("Raw timestamp: ${entry.timeStamp}");
 
     try {
       await saveHealthEntry(entry);
@@ -235,54 +236,59 @@ class SymptomEntry {
     this.notes,
   });
 
+  /// Convert to map for sending to backend
   Map<String, dynamic> toMap({bool includeId = false}) {
-    final date = DateFormat('yyyy-MM-dd').format(timeStamp);
-    final time = DateFormat('HH:mm:ss').format(timeStamp);
+    // Store full UTC timestamp
 
     final symptomList = symptomRatings.entries
         .map((e) => {'symptom_name': e.key, 'rating': e.value})
         .toList();
 
     final map = {
-      'entry_date': date,
-      'entry_time': time,
+  'entry_datetime': DateFormat('yyyy-MM-dd HH:mm:ss').format(timeStamp.toLocal()),
       'entry_notes': notes,
       'symptoms': symptomList,
     };
 
-    // if(includeId && entry_id != null){
-    //   map['entry_id'] = entry_id;
-    // }
+    if (includeId && entry_id != null) {
+      map['entry_id'] = entry_id;
+    }
 
     return map;
   }
 
-  factory SymptomEntry.fromMap(Map<String, dynamic> map) {
-  final rawDate = map['entry_date']; // e.g. "2025-08-24T23:00:00.000Z"
-  DateTime dateTime;
+  /// Convert from map received from backend
+factory SymptomEntry.fromMap(Map<String, dynamic> map) {
+  final rawDateTime = map['entry_datetime'] as String?;
 
-  if (rawDate != null && rawDate is String && rawDate.contains('T')) {
-    // ISO 8601 case
-    dateTime = DateTime.parse(rawDate);
+  late DateTime dateTime;
+  if (rawDateTime == null || rawDateTime.isEmpty) {
+    throw FormatException('entry_datetime is missing');
   } else {
-    // Fallback to your old format if backend still splits date/time
-    final dateStr = map['entry_date'] as String? ?? '';
-    final timeStr = map['entry_time'] as String? ?? '00:00:00';
-    dateTime = DateFormat('dd/MM/yy HH:mm:ss').parse('$dateStr $timeStr');
+    try {
+      // Try parsing with microseconds first
+      dateTime = DateFormat('yyyy-MM-dd HH:mm:ss.SSSSSS').parse(rawDateTime, true).toLocal();
+    } catch (_) {
+      // Fallback to seconds only
+      dateTime = DateFormat('yyyy-MM-dd HH:mm:ss').parse(rawDateTime, true).toLocal();
+    }
   }
+  
 
-    final symptomsList = map['symptoms'] as List<dynamic>? ?? [];
+  final symptomsList = map['symptoms'] as List<dynamic>? ?? [];
 
-    return SymptomEntry(
-      entry_id: map['entry_id'],
-      timeStamp: dateTime,
-      symptomRatings: {
+  return SymptomEntry(
+    entry_id: map['entry_id'],
+    timeStamp: dateTime,
+    symptomRatings: {
       for (final e in symptomsList)
         e['symptom_name'] as String: e['rating'] as int,
-    },notes: map['entry_notes'],
-    );
-  }
+    },
+    notes: map['entry_notes'] as String?,
+  );
 }
+}
+
 
 class Symptom {
   final int? id;
