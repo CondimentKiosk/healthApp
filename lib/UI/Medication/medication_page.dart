@@ -151,65 +151,61 @@ class _MedicationPageState extends State<MedicationPage> {
   
 */
   Widget _showMedications() {
-    if (widget.savedMedications.isEmpty) {
-      return Center(child: Text("No medications saved yet."));
-    }
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: AlwaysScrollableScrollPhysics(),
-      itemCount: widget.savedMedications.length,
-      itemBuilder: (context, index) {
-        final med = widget.savedMedications[index];
-
-        final String unit = (med.medType.toLowerCase() == 'tablet')
-            ? (med.dosage == 1 ? 'tablet' : 'tablets')
-            : (med.medType.toLowerCase() == 'injection')
-            ? (med.dosage == 1 ? 'injection' : 'injections')
-            : 'ml';
-
-        final int daysRemaining = calculateDaysRemaining(med);
-        final int difference = (daysRemaining - med.reminderLevel).floor();
-        final bool needsReorder = calculateReorderSuggestion(med);
-
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: Column(
-            children: [
-              ListTile(
-                title: Text(
-                  "${med.name}: Taking ${med.dosage} $unit\n${med.frequency} time${med.frequency > 1 ? 's' : ''} per ${med.frequencyType}",
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                subtitle: Text(
-                  displayDaysRemaining(med),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              if (canEditMedications)
-                _editMedicationButton(med, index),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  needsReorder
-                      ? "Reorder required"
-                      : "Reorder in $difference days",
-                  style: TextStyle(
-                    color: needsReorder
-                        ? Colors.redAccent
-                        : const Color.fromARGB(255, 3, 116, 62),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              if(canEditMedications)
-              _deleteMedicationButton(med, index),
-            ],
-          ),
-        );
-      },
-    );
+  if (widget.savedMedications.isEmpty) {
+    return const Center(child: Text("No medications saved yet."));
   }
+
+  return Column(
+    children: widget.savedMedications.map((med) {
+      final String unit = (med.medType.toLowerCase() == 'tablet')
+          ? (med.dosage == 1 ? 'tablet' : 'tablets')
+          : (med.medType.toLowerCase() == 'injection')
+              ? (med.dosage == 1 ? 'injection' : 'injections')
+              : 'ml';
+
+      final int daysRemaining = calculateDaysRemaining(med);
+      final int difference = (daysRemaining - med.reminderLevel).floor();
+      final bool needsReorder = calculateReorderSuggestion(med);
+
+      final index = widget.savedMedications.indexOf(med);
+
+      return Card(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(
+                "${med.name}: Taking ${med.dosage} $unit\n"
+                "${med.frequency} time${med.frequency > 1 ? 's' : ''} per ${med.frequencyType}",
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              subtitle: Text(
+                displayDaysRemaining(med),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+            if (canEditMedications) _editMedicationButton(med, index),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                needsReorder
+                    ? "Reorder required"
+                    : "Reorder in $difference days",
+                style: TextStyle(
+                  color: needsReorder
+                      ? Colors.redAccent
+                      : const Color.fromARGB(255, 3, 116, 62),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (canEditMedications) _deleteMedicationButton(med, index),
+          ],
+        ),
+      );
+    }).toList(),
+  );
+}
 
   Widget _createMedication() {
     return ElevatedButton(

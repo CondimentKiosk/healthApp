@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -218,7 +219,6 @@ void _showImageSourceDialog(BuildContext context) {
     if (selectedMedia == null) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text("Pick an image for text recognition"),
       );
     }
 
@@ -270,6 +270,9 @@ void _showImageSourceDialog(BuildContext context) {
               '🏥 Hospital: ${extracted['hospital']}',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
+            Text("Extracted Info is not always accurate. Always double check your appointment information."
+            "\nYou can change any mistakes from the 'Save Appointment'",
+            style: Theme.of(context).textTheme.titleMedium,)
         ],
       ),
     );
@@ -280,7 +283,7 @@ void _showImageSourceDialog(BuildContext context) {
     if (selectedMedia == null || extractedText == null) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text("No text found"),
+        child: Text("Please upload an image with clear text"),
       );
     }
 
@@ -299,37 +302,54 @@ void _showImageSourceDialog(BuildContext context) {
     );
   }
 
+  
   Widget _saveApptButton() {
     if (extracted.isEmpty) return const SizedBox.shrink();
 
     return ElevatedButton(
       onPressed: () async {
-        final extractedDate = parseExtractedDate(extracted['date'] ?? '');
+        try {
+          // Convert map to Appointment
+          final extractedAppt = Appointment(
+            date: parseExtractedDate(extracted['date'] ?? ''),
+            time: extracted['time'] ?? '',
+            consultant: extracted['consultant'] ?? '',
+            hospital: extracted['hospital'] ?? '',
+          );
 
-        final newAppt = Appointment(
-          date: extractedDate,
-          time: extracted['time'] ?? '',
-          consultant: extracted['consultant'] ?? 'N/A',
-          hospital: extracted['hospital'] ?? 'N/A',
-        );
+          // Push to manual entry page with pre-filled data
+          final newAppt = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ManualAppointmentEntry(prefilledAppointment: extractedAppt, referenceImage: selectedMedia,),
+            ),
+          );
 
-        widget.onSaveAppointment(newAppt);
+          // Only add if the user confirmed
+          if (newAppt != null && newAppt is Appointment) {
+            setState(() {
+              widget.savedAppointments.add(newAppt);
+              extracted.clear(); // Clear scanned info
+              selectedMedia = null; // Optional: clear image
+              extractedText = null;
+            });
 
-        await saveAppointment(newAppt);
-
-      setState(() {
-        widget.savedAppointments.add(newAppt);
-        extracted.clear();
-      });
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Appointment Saved!")));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text("Appointment Saved!")));
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error saving appointment: $e")),
+          );
+        }
       },
       child: const Text("Save Appointment"),
     );
   }
 }
+
 
 class Appointment {
   final int? appointment_id;
@@ -337,6 +357,8 @@ class Appointment {
   final String time;
   final String consultant;
   final String hospital;
+  final String? notes;
+  final String? imagePath; 
 
   Appointment({
     this.appointment_id,
@@ -344,6 +366,8 @@ class Appointment {
     required this.time,
     required this.consultant,
     required this.hospital,
+    this.notes,
+    this.imagePath,
   });
 
   Map<String, dynamic> toMap({bool includeId = false}) {
@@ -354,7 +378,8 @@ class Appointment {
       'doctor': consultant,
       'category_id': null,
       'location': hospital,
-      'apt_notes': null,
+      'apt_notes': notes,
+      'image_path': imagePath,
       'is_bookmarked': 0,
     };
 
@@ -368,14 +393,15 @@ class Appointment {
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
       appointment_id: map['appointment_id'],
-       date: map['date'] != null && map['date'].toString().isNotEmpty
+      date: map['date'] != null && map['date'].toString().isNotEmpty
           ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
-          : DateTime.now(), // fallback if null
-      time: map['time']?.toString() ?? "", // fallback empty string
-      consultant: map['doctor']?.toString() ?? "Unknown Doctor", // fallback
-      hospital: map['location']?.toString() ?? "Unknown Location", // fallback
+          : DateTime.now(),
+      time: map['time']?.toString() ?? "",
+      consultant: map['doctor'],
+      hospital: map['location'],
+      notes: map['apt_notes'],
+    imagePath: map['image_path']?.toString(),
     );
   }
-
-  void add(Appointment newAppt) {}
+   void add(Appointment newAppt) {}
 }

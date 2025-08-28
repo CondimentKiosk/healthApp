@@ -27,19 +27,23 @@ class UserService {
       body: json.encode({'email': email, 'password': password}),
     );
 
-
     if (response.statusCode == 200) {
       try {
         final data = json.decode(response.body);
 
         final int userId = data['user_id'];
         final int patientId = data['patient_id'];
+        final String? firstName = data['first_name'] as String?;
+final String? lastName = data['last_name'] as String?;
 
-        if (data.containsKey('access')) await AccessRights.loadFromMap(userId, patientId, data['access']);
-        
+
+        if (data.containsKey('access'))
+          await AccessRights.loadFromMap(userId, patientId, data['access']);
 
         return {
           'user_id': userId,
+          'first_name': firstName,
+          'last_name': lastName,
           'role': data['role'],
           'patient_id': patientId,
         };

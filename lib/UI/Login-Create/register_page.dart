@@ -12,7 +12,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _userService = UserService();
 
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _secondNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _ageController = TextEditingController();
@@ -34,7 +35,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final userInfo = {
-        'user_name': _nameController.text.trim(),
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _secondNameController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text.trim(),
         'age': _ageController.text.trim(),
@@ -93,7 +95,8 @@ class _RegisterPageState extends State<RegisterPage> {
           key: _formKey,
           child: ListView(
             children: [
-              _buildTextField('Full Name', _nameController),
+              _buildTextField('First Name', _firstNameController),
+              _buildTextField('Last Name', _secondNameController),
               _buildTextField(
                 'Email',
                 _emailController,
@@ -110,24 +113,38 @@ class _RegisterPageState extends State<RegisterPage> {
                 _birthdayController,
                 keyboardType: TextInputType.datetime,
               ),
-              _buildTextField('HSC Number (Optional)', _hscController, keyboardType: TextInputType.number, optional: true),
+              _buildTextField(
+                'HSC Number (Optional)',
+                _hscController,
+                keyboardType: TextInputType.number,
+                optional: true,
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: selectedRole,
                 decoration: const InputDecoration(labelText: 'I am a...'),
                 items: const [
                   DropdownMenuItem(value: 'patient', child: Text('Patient')),
-                  DropdownMenuItem(value: 'carer', child: Text('Carer/Family')),                ],
+                  DropdownMenuItem(value: 'carer', child: Text('Carer/Family')),
+                ],
                 onChanged: (value) => setState(() => selectedRole = value!),
               ),
-              if(isCarer)
-              _buildTextField('Patient\'s Email (link account)', _linkedPatientEmailController),
+              if (isCarer)
+                _buildTextField(
+                  'Patient\'s Email (link account)',
+                  _linkedPatientEmailController,
+                ),
 
-              const SizedBox(height: 16,),
-              if(error!=null) Text(error!, style:const TextStyle(color: Colors.red)),
+              const SizedBox(height: 16),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.red)),
 
-              ElevatedButton(onPressed: isLoading ? null : register, 
-              child: isLoading ? const CircularProgressIndicator():const Text('Create Account'))
+              ElevatedButton(
+                onPressed: isLoading ? null : register,
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Create Account'),
+              ),
             ],
           ),
         ),

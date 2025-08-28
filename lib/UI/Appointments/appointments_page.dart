@@ -232,7 +232,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _listView() {
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: AlwaysScrollableScrollPhysics(),
       itemCount: widget.savedAppointments.length,
       itemBuilder: (context, index) {
         final appt = widget.savedAppointments[index];

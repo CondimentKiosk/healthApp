@@ -30,13 +30,15 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       final userId = loginData['user_id'];
+      final firstName = loginData['first_name'];
+      final lastName = loginData['last_name'];
       final role = loginData['role'];
-      
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => MyHomePage(
-            title: "Health Hub for ${userId}",
+            title: "Health Hub for $firstName $lastName\nYour Role : $role",
             userId: userId,
             role: role,
           ),
@@ -63,35 +65,35 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(title: const Text('Login')),
       body: SafeArea(
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            if (error != null)
-              Text(error!, style: const TextStyle(color: Colors.red)),
-            ElevatedButton(
-              onPressed: isLoading ? null : login,
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Login'),
-            ),
-            TextButton(
-              onPressed: navigateToRegister,
-              child: const Text('Create an Account'),
-            ),
-          ],
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Colors.red)),
+              ElevatedButton(
+                onPressed: isLoading ? null : login,
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Login'),
+              ),
+              TextButton(
+                onPressed: navigateToRegister,
+                child: const Text('Create an Account'),
+              ),
+            ],
+          ),
         ),
       ),
-    )
     );
   }
 }

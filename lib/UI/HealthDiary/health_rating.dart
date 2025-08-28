@@ -165,6 +165,10 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
                             const Text("Ignore This Time"),
                           ],
                         ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [Text("Worst"), Text("Best")],
+                        ),
                         Slider(
                           value: ratings[name]!,
                           min: 1,
