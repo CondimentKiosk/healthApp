@@ -61,7 +61,7 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
   }
 
   Widget _showHealthRecord() {
-    final records = widget.healthReport.reversed.toList();
+    final records = widget.healthReport.toList();
 
     if (records.isEmpty) {
       return const Center(child: Text("No health data yet"));
@@ -73,7 +73,7 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
       itemCount: records.length,
       itemBuilder: (context, index) {
         final report = records[index];
-        final date = DateFormat('dd/MM/yy @ h:mma').format(report.timeStamp);
+        final date = DateFormat('dd/MM/yy HH:mm').format(report.timeStamp);
         final symptoms = report.symptomRatings;
 
         return Card(

@@ -34,7 +34,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
   void initState() {
     super.initState();
     for (final symptom in widget.symptoms) {
-      ratings[symptom.name] = null;
+      ratings[symptom.name] = 5;
     }
   }
 
@@ -92,7 +92,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
           builder: (context) => SymptomSelectionPage(
             userSymptoms: symptoms,
             patientId: widget.patientId,
-            trackedSymptoms: widget.symptoms
+            trackedSymptoms: widget.symptoms,
           ),
         ),
       );
@@ -166,7 +166,7 @@ class _HealthDiaryPageState extends State<HealthDiaryPage> {
                           ],
                         ),
                         Slider(
-                          value: ratings[name] ?? 5.0,
+                          value: ratings[name]!,
                           min: 1,
                           max: 10,
                           divisions: 9,
@@ -236,16 +236,14 @@ class SymptomEntry {
   });
 
   Map<String, dynamic> toMap({bool includeId = false}) {
-    final date = DateFormat('yyyy-MM-dd').format(timeStamp);
-    final time = DateFormat('HH:mm:ss').format(timeStamp);
+    final dateTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(timeStamp);
 
     final symptomList = symptomRatings.entries
         .map((e) => {'symptom_name': e.key, 'rating': e.value})
         .toList();
 
     final map = {
-      'entry_date': date,
-      'entry_time': time,
+      'entry_dateTime': dateTime,
       'entry_notes': notes,
       'symptoms': symptomList,
     };
@@ -258,18 +256,18 @@ class SymptomEntry {
   }
 
   factory SymptomEntry.fromMap(Map<String, dynamic> map) {
-  final rawDate = map['entry_date']; // e.g. "2025-08-24T23:00:00.000Z"
-  DateTime dateTime;
+    final rawDate = map['entry_dateTime'] as String? ?? '';
+    DateTime dateTime;
 
-  if (rawDate != null && rawDate is String && rawDate.contains('T')) {
-    // ISO 8601 case
-    dateTime = DateTime.parse(rawDate);
-  } else {
-    // Fallback to your old format if backend still splits date/time
-    final dateStr = map['entry_date'] as String? ?? '';
-    final timeStr = map['entry_time'] as String? ?? '00:00:00';
-    dateTime = DateFormat('dd/MM/yy HH:mm:ss').parse('$dateStr $timeStr');
-  }
+    if (rawDate.contains('T')) {
+      // ISO 8601 UTC
+      dateTime = DateTime.parse(rawDate).toLocal();
+    } else if (rawDate.isNotEmpty) {
+      // MySQL DATETIME
+      dateTime = DateFormat('yyyy-MM-dd HH:mm:ss').parse(rawDate);
+    } else {
+      dateTime = DateTime.now(); // fallback
+    }
 
     final symptomsList = map['symptoms'] as List<dynamic>? ?? [];
 
@@ -277,9 +275,10 @@ class SymptomEntry {
       entry_id: map['entry_id'],
       timeStamp: dateTime,
       symptomRatings: {
-      for (final e in symptomsList)
-        e['symptom_name'] as String: e['rating'] as int,
-    },notes: map['entry_notes'],
+        for (final entry in symptomsList)
+          entry['symptom_name'] as String: entry['rating'] as int,
+      },
+      notes: map['entry_notes'],
     );
   }
 }
