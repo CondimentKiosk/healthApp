@@ -54,44 +54,61 @@ class _MedicationPageState extends State<MedicationPage> {
   }
 
   //functions
-  bool calculateReorderSuggestion(Medication med) {
-    final int daysRemaining = calculateDaysRemaining(med);
-    if (daysRemaining <= med.reminderLevel) {
-      return true;
-    } else {
-      return false;
-    }
+  
+
+ bool calculateReorderSuggestion(Medication med) {
+  final int dosesRemaining = (med.numRemaining / med.dosage).floor();
+  
+  // always calculate days remaining regardless of frequency type
+  int daysRemaining;
+  switch (med.frequencyType.toLowerCase()) {
+    case 'day':
+      daysRemaining = (dosesRemaining / med.frequency).ceil();
+      break;
+    case 'week':
+      daysRemaining = (dosesRemaining / med.frequency * 7).ceil();
+      break;
+    case 'month':
+      daysRemaining = (dosesRemaining / med.frequency * 30).ceil();
+      break;
+    default:
+      daysRemaining = dosesRemaining;
+      break;
   }
 
-  int calculateDosesRemaining(Medication med) {
-    if (med.dosage == 0) return 0;
-    return (med.numRemaining / med.dosage).floor();
+  return daysRemaining <= med.reminderLevel;
+}
+
+
+  String displayRemaining(Medication med) {
+  if (med.dosage == 0) return "No doses remaining";
+
+  final dosesRemaining = (med.numRemaining / med.dosage).floor();
+  int remaining;
+  String unit;
+
+  switch (med.frequencyType.toLowerCase()) {
+    case "day":
+      remaining = (dosesRemaining / med.frequency).ceil();
+      unit = remaining == 1 ? 'day' : 'days';
+      break;
+    case "week":
+      remaining = (dosesRemaining / med.frequency).ceil();
+      unit = remaining == 1 ? 'week' : 'weeks';
+      break;
+    case "month":
+      remaining = (dosesRemaining / med.frequency).ceil();
+      unit = remaining == 1 ? 'month' : 'months';
+      break;
+    default:
+      remaining = dosesRemaining;
+      unit = remaining == 1 ? 'day' : 'days';
+      break;
   }
 
-  int calculateDaysRemaining(Medication med) {
-    final int dosesPerDay;
+  return "You have $remaining $unit before you run out.";
+}
 
-    switch (med.frequencyType.toLowerCase()) {
-      case "day":
-        dosesPerDay = med.frequency;
-        break;
-      case "week":
-        dosesPerDay = (med.frequency / 7).ceil();
-        break;
-      case "month":
-        dosesPerDay = (med.frequency / 30).ceil();
-      default:
-        dosesPerDay = 1;
-    }
-
-    final int daysRemaining = (calculateDosesRemaining(med) / dosesPerDay)
-        .floor();
-    return daysRemaining;
-  }
-
-  String displayDaysRemaining(Medication med) {
-    return "You have ${calculateDaysRemaining(med)} day${calculateDaysRemaining(med) > 1 ? 's' : ''} before you run out.";
-  }
 
   //builds
   @override
@@ -163,9 +180,27 @@ class _MedicationPageState extends State<MedicationPage> {
               ? (med.dosage == 1 ? 'injection' : 'injections')
               : 'ml';
 
-      final int daysRemaining = calculateDaysRemaining(med);
-      final int difference = (daysRemaining - med.reminderLevel).floor();
+      // Use your new functions here
       final bool needsReorder = calculateReorderSuggestion(med);
+      final String remainingText = displayRemaining(med);
+
+      // Optional: calculate difference in days for informational text
+      final int dosesRemaining = (med.numRemaining / med.dosage).floor();
+      int daysRemaining;
+      switch (med.frequencyType.toLowerCase()) {
+        case 'day':
+          daysRemaining = (dosesRemaining / med.frequency).ceil();
+          break;
+        case 'week':
+          daysRemaining = (dosesRemaining / med.frequency * 7).ceil();
+          break;
+        case 'month':
+          daysRemaining = (dosesRemaining / med.frequency * 30).ceil();
+          break;
+        default:
+          daysRemaining = dosesRemaining;
+      }
+      final num difference = daysRemaining - med.reminderLevel;
 
       final index = widget.savedMedications.indexOf(med);
 
@@ -180,7 +215,7 @@ class _MedicationPageState extends State<MedicationPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               subtitle: Text(
-                displayDaysRemaining(med),
+                remainingText+"\nCurrent Stock: ${med.numRemaining}",
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -311,7 +346,6 @@ class Medication {
   final String frequencyType;
   final int numRemaining;
   final String? notes;
-
   final num reminderLevel;
 
   Medication({
@@ -337,11 +371,9 @@ class Medication {
       'low_stock_alert': reminderLevel,
       'notes': notes,
     };
-
     if (includeId && medication_id != null) {
       map['medication_id'] = medication_id;
     }
-
     return map;
   }
 
@@ -351,7 +383,7 @@ class Medication {
       name: map['med_name'] ?? '',
       medType: map['medication_type'] ?? '',
       dosage: map['dosage'] ?? 0,
-      frequency: map['frequency'] ?? 1,
+      frequency: map['times_per'] ?? 1,
       frequencyType: map['frequency_type'] ?? '',
       numRemaining: map['current_stock'] ?? 0,
       reminderLevel: map['low_stock_alert'] ?? 0,

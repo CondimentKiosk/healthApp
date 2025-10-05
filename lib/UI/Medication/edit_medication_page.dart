@@ -6,10 +6,7 @@ import 'package:numberpicker/numberpicker.dart';
 class EditMedicationPage extends StatefulWidget {
   final Medication medication;
 
-  const EditMedicationPage({
-    super.key,
-    required this.medication,
-  });
+  const EditMedicationPage({super.key, required this.medication});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -31,6 +28,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
   @override
   void initState() {
     super.initState();
+
     _nameController = TextEditingController(text: widget.medication.name);
     _medTypeController = TextEditingController(text: widget.medication.medType);
     _dosageController = TextEditingController(
@@ -48,6 +46,10 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
     _reminderLevelController = TextEditingController(
       text: widget.medication.reminderLevel.toString(),
     );
+
+    // Initialize combined frequency display
+    _combinedFrequencyController.text =
+        "${widget.medication.frequency} time${widget.medication.frequency > 1 ? 's' : ''} per ${widget.medication.frequencyType}";
   }
 
   void submitForm() {
@@ -56,21 +58,23 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
         medication_id: widget.medication.medication_id,
         name: _nameController.text,
         medType: _medTypeController.text,
-        dosage: int.parse(_dosageController.text),
+        dosage: num.parse(_dosageController.text),
         frequency: int.parse(_frequencyController.text),
         frequencyType: _frequencyTypeController.text,
         numRemaining: int.parse(_numRemainingController.text),
         reminderLevel: int.parse(_reminderLevelController.text),
       );
 
-     updateMedication(updatedMed).then((_) {
-      Navigator.pop(context, updatedMed);
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update medication: $error")),
-      );
-    });
-  }
+      updateMedication(updatedMed)
+          .then((_) {
+            Navigator.pop(context, updatedMed);
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Failed to update medication: $error")),
+            );
+          });
+    }
   }
 
   Future<void> selectMedType() async {
@@ -375,7 +379,7 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 decoration: InputDecoration(labelText: "Medication Type"),
                 validator: (value) =>
                     value!.isEmpty ? "Select a Medication Type" : null,
-                onTap: selectMedType, // <-- important
+                onTap: selectMedType,
               ),
 
               TextFormField(
@@ -404,8 +408,10 @@ class _EditMedicationPageState extends State<EditMedicationPage> {
                 controller: _reminderLevelController,
                 decoration: InputDecoration(
                   labelText:
-                      "Stock level you want to receive low-stock alert (Optional)",
+                      "Stock level you want to receive low-stock alert",
                 ),
+                validator: (value) =>
+                    value!.isEmpty ? "Enter your low-stock alert" : null,
                 onTap: selectReminderLevel,
               ),
               SizedBox(height: 20),

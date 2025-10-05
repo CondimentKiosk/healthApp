@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:health_app/Services/access_rights.dart';
-import 'package:health_app/UI/Appointments/scanner_page.dart';
+import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:http/http.dart' as http;
 
 const String baseUrl = 'http://192.168.0.28:4000/appointments';
@@ -58,7 +58,7 @@ body['user_id'] = userId;
 body['patient_id'] = patientId; 
 
   if (apt.appointment_id == null) {
-    throw Exception('Appointment ID is required for update');
+    throw Exception('Please return to the homepage and try again');
   }
 
   final response = await http.put(   

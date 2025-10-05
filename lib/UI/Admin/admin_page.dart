@@ -63,16 +63,19 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Widget _showAllUsers() {
-    if (widget.users.isEmpty) {
+
+      final usersToShow = widget.users.where((user) => user.id != widget.userId).toList();
+
+    if (usersToShow.isEmpty) {
       return Center(child: Text("No users linked to your account yet"));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: AlwaysScrollableScrollPhysics(),
-      itemCount: widget.users.length,
+      itemCount: usersToShow.length,
       itemBuilder: (context, index) {
-        final user = widget.users[index];
+        final user = usersToShow[index];
         String userFullName = "${user.firstName} ${user.lastName}";
 
         return Card(

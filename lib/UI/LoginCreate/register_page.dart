@@ -16,12 +16,13 @@ class _RegisterPageState extends State<RegisterPage> {
   final _secondNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _ageController = TextEditingController();
   final _birthdayController = TextEditingController();
   final _hscController = TextEditingController();
   final _linkedPatientEmailController = TextEditingController();
 
-  String selectedRole = 'patient';
+  String selectedRole = 'patient'; // what the dropdown shows
+    String effectiveRole = 'patient'; // what gets sent to backend
+    bool isLinking = false;
   bool isLoading = false;
   String? error;
 
@@ -39,7 +40,6 @@ class _RegisterPageState extends State<RegisterPage> {
         'last_name': _secondNameController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text.trim(),
-        'age': _ageController.text.trim(),
         'birthday': _birthdayController.text.trim(),
         'hsc_number': _hscController.text.trim().isEmpty
             ? null
@@ -83,9 +83,11 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
-    final isCarer = selectedRole == 'carer';
+    
 
     return Scaffold(
       appBar: AppBar(title: const Text('Create Account')),
@@ -103,11 +105,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 keyboardType: TextInputType.emailAddress,
               ),
               _buildTextField('Password', _passwordController, obscure: true),
-              _buildTextField(
-                'Age',
-                _ageController,
-                keyboardType: TextInputType.number,
-              ),
               _buildTextField(
                 'Birthday (YYYY-MM-DD)',
                 _birthdayController,
@@ -127,12 +124,59 @@ class _RegisterPageState extends State<RegisterPage> {
                   DropdownMenuItem(value: 'patient', child: Text('Patient')),
                   DropdownMenuItem(value: 'carer', child: Text('Carer/Family')),
                 ],
-                onChanged: (value) => setState(() => selectedRole = value!),
+                onChanged: (value) async {
+                  setState(() => selectedRole = value!);
+
+                  if (value == 'carer') {
+                    final result = await showDialog<String>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Carer Role'),
+                        content: const Text(
+                          'Are you:\n\n'
+                          '1. Caring for someone who does NOT use the app (be the Admin)?\n'
+                          '2. Linking to an existing patient account (Carer only)?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'admin'),
+                            child: const Text('I am the Admin'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'linked'),
+                            child: const Text('I am Linking'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (result == 'admin') {
+                      setState(() {
+                        selectedRole =
+                            'carer'; // show "Carer/Family" in dropdown
+                        effectiveRole = 'patient'; // backend sees as patient
+                        isLinking = false; // no email needed
+                      });
+                    } else if (result == 'linked') {
+                      setState(() {
+                        effectiveRole = 'carer';
+                        isLinking = true; // require patient email
+                      });
+                    }
+                  } else {
+                    setState(() {
+                      effectiveRole = 'patient';
+                      isLinking = false;
+                    });
+                  }
+                },
               ),
-              if (isCarer)
+
+              if (isLinking)
                 _buildTextField(
-                  'Patient\'s Email (link account)',
+                  "Patient's Email (link account)",
                   _linkedPatientEmailController,
+                  keyboardType: TextInputType.emailAddress,
                 ),
 
               const SizedBox(height: 16),

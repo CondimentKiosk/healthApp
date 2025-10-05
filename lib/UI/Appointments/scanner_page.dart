@@ -3,11 +3,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -128,7 +127,6 @@ void _showImageSourceDialog(BuildContext context) {
     }
   }
 
-  // 📋 Appointment details extractor
   Map<String, String> extractAppointmentDetails(String text) {
     final lines = text.split('\n');
     final Map<String, String> info = {};
@@ -171,15 +169,6 @@ void _showImageSourceDialog(BuildContext context) {
     return info;
   }
 
-  Future<void> saveAppointment(Appointment appt) async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> stored = prefs.getStringList('appointments') ?? [];
-
-    stored.add(jsonEncode(appt.toMap()));
-    await prefs.setStringList('appointments', stored);
-  }
-
-  // 🧱 Full UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,7 +181,6 @@ void _showImageSourceDialog(BuildContext context) {
     );
   }
 
-  // 📦 Main screen layout
   Widget _buildUI() {
     return SingleChildScrollView(
       child: Column(
@@ -214,7 +202,6 @@ void _showImageSourceDialog(BuildContext context) {
     return SizedBox(width: double.infinity, child: button);
   }
 
-  // 🖼️ Image view
   Widget _imageView() {
     if (selectedMedia == null) {
       return const Padding(
@@ -244,7 +231,10 @@ void _showImageSourceDialog(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '📋 Appointment Info',
+            "Attempting to locate Date, Time, Doctor and Hospital...",
+          ),
+          Text(
+            'Appointment Info',
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -283,7 +273,9 @@ void _showImageSourceDialog(BuildContext context) {
     if (selectedMedia == null || extractedText == null) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text("Please upload an image with clear text"),
+        child: Text("Take a picture of your appointment letter and this tool will extract the important details"
+        "\nYou can edit any errors during the process of saving the appointment"
+        "\nPlease upload an image with clear text"),
       );
     }
 
@@ -310,7 +302,7 @@ void _showImageSourceDialog(BuildContext context) {
       onPressed: () async {
         try {
           // Convert map to Appointment
-          final extractedAppt = Appointment(
+          final extractedAppt = ScannedAppointment(
             date: parseExtractedDate(extracted['date'] ?? ''),
             time: extracted['time'] ?? '',
             consultant: extracted['consultant'] ?? '',
@@ -350,58 +342,18 @@ void _showImageSourceDialog(BuildContext context) {
   }
 }
 
-
-class Appointment {
-  final int? appointment_id;
-  final DateTime date;
-  final String time;
-  final String consultant;
-  final String hospital;
+class ScannedAppointment {
+  final DateTime? date;
+  final String? time;
+  final String? consultant;
+  final String? hospital;
   final String? notes;
-  final String? imagePath; 
 
-  Appointment({
-    this.appointment_id,
-    required this.date,
-    required this.time,
-    required this.consultant,
-    required this.hospital,
+  ScannedAppointment({
+    this.date,
+    this.time,
+    this.consultant,
+    this.hospital,
     this.notes,
-    this.imagePath,
   });
-
-  Map<String, dynamic> toMap({bool includeId = false}) {
-    final map = {
-      'apt_description': null,
-      'date': date.toString().split(' ')[0],
-      'time': time,
-      'doctor': consultant,
-      'category_id': null,
-      'location': hospital,
-      'apt_notes': notes,
-      'image_path': imagePath,
-      'is_bookmarked': 0,
-    };
-
-    if (includeId && appointment_id != null) {
-      map['appointment_id'] = appointment_id;
-    }
-
-    return map;
-  }
-
-  factory Appointment.fromMap(Map<String, dynamic> map) {
-    return Appointment(
-      appointment_id: map['appointment_id'],
-      date: map['date'] != null && map['date'].toString().isNotEmpty
-          ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      time: map['time']?.toString() ?? "",
-      consultant: map['doctor'],
-      hospital: map['location'],
-      notes: map['apt_notes'],
-    imagePath: map['image_path']?.toString(),
-    );
-  }
-   void add(Appointment newAppt) {}
 }

@@ -1,14 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:health_app/Services/appointment_services.dart';
+import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:intl/intl.dart';
 
 class ManualAppointmentEntry extends StatefulWidget {
-  final Appointment? prefilledAppointment;
-  final File? referenceImage; 
+  final ScannedAppointment? prefilledAppointment;
+  final File? referenceImage;
 
   const ManualAppointmentEntry({
     super.key,
@@ -35,21 +35,29 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
 
     if (widget.prefilledAppointment != null) {
       final appt = widget.prefilledAppointment!;
-      _dateController.text = DateFormat('dd/MM/yyyy').format(appt.date);
-      _timeController.text = normaliseTime(appt.time);
-      _hospitalController.text = appt.hospital;
-      _consultantController.text = appt.consultant;
-      _notesController.text = appt.notes ?? ''; 
+      if (appt.date != null) {
+        _dateController.text = DateFormat('dd/MM/yyyy').format(appt.date!);
+      }
+      if (appt.time != null && appt.time!.isNotEmpty) {
+        _timeController.text = normaliseTime(appt.time!);
+      }
+      if (appt.hospital != null && appt.hospital!.isNotEmpty) {
+        _hospitalController.text = appt.hospital!;
+      }
+      if (appt.consultant != null && appt.consultant!.isNotEmpty) {
+        _consultantController.text = appt.consultant!;
+      }
+      _notesController.text = appt.notes ?? '';
     }
   }
 
   void submitForm() async {
-    String? base64Image;
+    // String? base64Image;
 
-  if (widget.referenceImage != null) {
-    final bytes = await widget.referenceImage!.readAsBytes();
-    base64Image = base64Encode(bytes);
-  }
+    // if (widget.referenceImage != null) {
+    //   final bytes = await widget.referenceImage!.readAsBytes();
+      // base64Image = base64Encode(bytes);
+    // }
 
     if (_formkey.currentState!.validate()) {
       final parsedDate = DateFormat('dd/MM/yyyy').parse(_dateController.text);
@@ -76,28 +84,29 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
           })
           .catchError((error) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to add medication $error')),
+              SnackBar(content: Text('Failed to add appointment $error')),
             );
           });
     }
   }
 
   String normaliseTime(String rawTime) {
-  try {
-    // Try parsing with am/pm first
-    final parsed = DateFormat.jm().parse(rawTime); // handles "10:40 am" or "1:30pm"
-    return DateFormat.Hm().format(parsed); // outputs "10:40" or "13:30"
-  } catch (_) {
     try {
-      // If no am/pm, maybe it’s already 24hr
-      final parsed = DateFormat.Hm().parse(rawTime);
-      return DateFormat.Hm().format(parsed);
-    } catch (e) {
-      throw Exception("Could not parse time: $rawTime");
+      // Try parsing with am/pm first
+      final parsed = DateFormat.jm().parse(
+        rawTime,
+      ); // handles "10:40 am" or "1:30pm"
+      return DateFormat.Hm().format(parsed); // outputs "10:40" or "13:30"
+    } catch (_) {
+      try {
+        // If no am/pm, maybe it’s already 24hr
+        final parsed = DateFormat.Hm().parse(rawTime);
+        return DateFormat.Hm().format(parsed);
+      } catch (e) {
+        throw Exception("Could not parse time: $rawTime");
+      }
     }
   }
-}
-
 
   Future<void> selectDate() async {
     final DateTime? picked = await showDatePicker(
@@ -181,9 +190,9 @@ class _ManualAppointmentEntryState extends State<ManualAppointmentEntry> {
                 ),
                 TextFormField(
                   controller: _consultantController,
-                  decoration: InputDecoration(labelText: 'Consultant'),
+                  decoration: InputDecoration(labelText: 'Consultant or Department'),
                   validator: (value) =>
-                      value!.isEmpty ? 'Enter a doctor' : null,
+                      value!.isEmpty ? 'Enter a doctor or department' : null,
                 ),
                 TextFormField(
                   controller: _notesController,

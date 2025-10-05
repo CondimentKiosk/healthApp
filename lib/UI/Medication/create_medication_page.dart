@@ -392,8 +392,10 @@ class _CreateMedicationState extends State<CreateMedication> {
                 controller: _reminderLevelController,
                 readOnly: true,
                 decoration: InputDecoration(
-                  labelText: "Select low stock alert(Optional)",
+                  labelText: "Select low stock alert",
                 ),
+                validator: (value) =>
+                    value!.isEmpty ? "Enter your low stock alert" : null,
                 onTap: selectReminderLevel,
               ),
               SizedBox(height: 20),

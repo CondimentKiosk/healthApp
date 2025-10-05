@@ -4,8 +4,8 @@ import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:flutter/material.dart';
 import 'package:health_app/UI/HealthDiary/health_rating.dart';
 import 'package:health_app/UI/HealthDiary/health_record.dart';
-import 'package:health_app/UI/Login-Create/login_page.dart';
-import 'package:health_app/UI/Login-Create/register_page.dart';
+import 'package:health_app/UI/LoginCreate/login_page.dart';
+import 'package:health_app/UI/LoginCreate/register_page.dart';
 import 'package:health_app/UI/Medication/medication_page.dart';
 import 'package:health_app/UI/no_access.dart';
 import 'package:health_app/Services/access_rights.dart';
@@ -19,21 +19,22 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  // This widget is the root of the application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Welcome',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 21, 92, 1),
+          seedColor: const Color.fromARGB(255, 0, 56, 10),
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontSize: 18),
           bodyMedium: TextStyle(fontSize: 16),
           titleLarge: TextStyle(fontSize: 25),
-          labelLarge: TextStyle(fontSize: 25),
-          titleMedium: TextStyle(fontSize: 20, color: Color.fromARGB(255, 243, 2, 2))
+          titleMedium: TextStyle(
+            fontSize: 20,
+            color: Color.fromARGB(255, 243, 2, 2),
+          ),
         ),
       ),
       initialRoute: '/login',
@@ -78,25 +79,100 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildUI() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24), // Outer padding
+      padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _styledButton(_viewScanner()),
+          // --- Appointments Section ---
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Appointments",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _styledButton(_viewAppointments()),
+                  Padding(padding: const EdgeInsets.all(10)),
+                  const SizedBox(height: 12),
+                  _styledButton(_viewScanner()),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
-          _styledButton(_viewAppointments()),
+
+          // --- Medication Section ---
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Medication",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _styledButton(_viewMedication()),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
-          _styledButton(_viewMedication()),
+
+          // --- Health Diary Section ---
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Health Tracking",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _styledButton(_viewHealthDiary()),
+                    Padding(padding: const EdgeInsets.all(10)),
+                    const SizedBox(height: 12),
+                    _styledButton(_viewHealthReport()),
+                  ],
+                ),
+              ),
+            ),
+
           const SizedBox(height: 20),
-          if (AccessRights.has('health_diary', 'edit')) 
-            _styledButton(_viewHealthDiary()),
-          const SizedBox(height: 20),
-          _styledButton(_viewHealthReport()),
-          const SizedBox(height: 20),
+
+          // --- Admin Section ---
           if (AccessRights.has('admin', 'admin'))
-            _styledButton(_viewAdminPage()),
-          const SizedBox(height: 20),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Admin",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _styledButton(_viewAdminPage()),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -109,6 +185,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _viewScanner() {
     return ElevatedButton(
       onPressed: () {
+        if (!AccessRights.has('appointment', 'edit')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoAccessPage(resourceName: 'Letter Scanner'),
+            ),
+          );
+        } else {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -122,8 +206,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         );
+      }
       },
-      child: const Text("Open Scanner"),
+      child: const Text("Scan Appointment Letter"),
     );
   }
 
@@ -150,7 +235,7 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }
       },
-      child: const Text('View Appointments'),
+      child: const Text('View All Appointments'),
     );
   }
 
@@ -177,13 +262,21 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }
       },
-      child: const Text("Open Medication"),
+      child: const Text("View All Medications"),
     );
   }
 
   Widget _viewHealthDiary() {
     return ElevatedButton(
       onPressed: () {
+        if (!AccessRights.has('health_diary', 'edit')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoAccessPage(resourceName: 'Health Tracking'),
+            ),
+          );
+        } else {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -200,8 +293,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         );
+      }
       },
-      child: const Text("Open Health Diary"),
+      child: const Text("Track Your Symptoms"),
     );
   }
 
@@ -228,7 +322,7 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }
       },
-      child: const Text("Open Health Report"),
+      child: const Text("View Your Health Report"),
     );
   }
 
@@ -247,7 +341,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       },
-      child: const Text("Open Admin Page"),
+      child: const Text("View Admin Controls"),
     );
   }
 }

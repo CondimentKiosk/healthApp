@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
         context,
         MaterialPageRoute(
           builder: (context) => MyHomePage(
-            title: "Health Hub for $firstName $lastName\nYour Role : $role",
+            title: "Health Hub for $firstName $lastName",
             userId: userId,
             role: role,
           ),

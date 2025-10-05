@@ -3,7 +3,6 @@ import 'package:health_app/Services/appointment_services.dart'
     as AppointmentService;
 import 'package:health_app/UI/Appointments/edit_appointments_page.dart';
 import 'package:health_app/UI/Appointments/manual_appointment_entry_page.dart';
-import 'package:health_app/UI/Appointments/scanner_page.dart';
 import 'package:health_app/Services/access_rights.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -30,14 +29,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   @override
   void initState() {
     super.initState();
-    _loadAppointments();
+    loadAppointments();
   }
 
-  Future<void> _loadAppointments() async {
+  Future<void> loadAppointments() async {
     try {
       final appts = await AppointmentService.getAppointmentsForPatient(
         widget.patientId,
       );
+
       setState(() {
         widget.savedAppointments.clear();
         widget.savedAppointments.addAll(appts);
@@ -71,6 +71,22 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     return grouped;
+  }
+
+  DateTime appointmentDateTime(Appointment appt) {
+    // appt.date is a DateTime (usually with midnight time)
+    final date = appt.date;
+
+    // If time is like "14:30"
+    final parts = appt.time.split(':');
+    if (parts.length == 2) {
+      final h = int.tryParse(parts[0]) ?? 0;
+      final m = int.tryParse(parts[1]) ?? 0;
+      return DateTime(date.year, date.month, date.day, h, m);
+    }
+
+    // Fallback: just return the date at midnight
+    return DateTime(date.year, date.month, date.day);
   }
 
   bool isCalendarView = true;
@@ -151,7 +167,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
         if (updatedAppt != null && updatedAppt is Appointment) {
           setState(() {
-            widget.savedAppointments[index] = updatedAppt;
+            final i = widget.savedAppointments.indexWhere(
+              (a) => a.appointment_id == appt.appointment_id,
+            );
+            if (i != -1) {
+              widget.savedAppointments[i] = updatedAppt;
+            }
           });
           ScaffoldMessenger.of(
             context,
@@ -187,76 +208,136 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _deleteAppointmentButton(Appointment appt, int index) {
-  return ElevatedButton(
-    onPressed: () async {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("Confirm Deletion"),
-            content: const Text("Are you sure you want to delete this appointment?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false), // cancel
-                child: const Text("Cancel"),
+    return ElevatedButton(
+      onPressed: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Confirm Deletion"),
+              content: const Text(
+                "Are you sure you want to delete this appointment?",
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true), // confirm
-                child: const Text("Delete"),
-              ),
-            ],
-          );
-        },
-      );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false), // cancel
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true), // confirm
+                  child: const Text("Delete"),
+                ),
+              ],
+            );
+          },
+        );
 
-      if (confirm == true) {
-        try {
-          await AppointmentService.deleteAppointment(appt);
-          setState(() {
-            widget.savedAppointments.removeAt(index);
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Appointment Deleted!")),
-          );
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to delete appointment: $e")),
-          );
+        if (confirm == true) {
+          try {
+            await AppointmentService.deleteAppointment(appt);
+            setState(() {
+              widget.savedAppointments.removeWhere(
+                (a) => a.appointment_id == appt.appointment_id,
+              );
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Appointment Deleted!")),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Failed to delete appointment: $e")),
+            );
+          }
         }
-      }
-    },
-    child: Text("Delete Appointment", style: Theme.of(context).textTheme.titleMedium),
-  );
-}
+      },
+      child: Text(
+        "Delete Appointment",
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    );
+  }
 
   Widget _listView() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: AlwaysScrollableScrollPhysics(),
-      itemCount: widget.savedAppointments.length,
-      itemBuilder: (context, index) {
-        final appt = widget.savedAppointments[index];
+    final now = DateTime.now();
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              ListTile(
-                title: Text(
-                  "${DateFormat('dd/MM/yy').format(appt.date)} at ${appt.time}",
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                subtitle: Text(
-                  "Consultant: ${appt.consultant} at ${appt.hospital}",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              if (canEditAppointments) _editAppointmentsButton(appt, index),
-              if (canEditAppointments) _deleteAppointmentButton(appt, index),
-            ],
+    final upcoming =
+        widget.savedAppointments
+            .where((appt) => appointmentDateTime(appt).isAfter(now))
+            .toList()
+          ..sort(
+            (a, b) => appointmentDateTime(a).compareTo(appointmentDateTime(b)),
+          );
+
+    final past =
+        widget.savedAppointments
+            .where((appt) => appointmentDateTime(appt).isBefore(now))
+            .toList()
+          ..sort(
+            (a, b) => appointmentDateTime(b).compareTo(appointmentDateTime(a)),
+          );
+
+    return ListView(
+      shrinkWrap: true,
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        if (upcoming.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              "Upcoming Appointments",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
-        );
-      },
+          ...upcoming.map(
+            (appt) => _appointmentCard(
+              appt,
+              upcoming.indexOf(appt),
+              ValueKey(appt.appointment_id),
+            ),
+          ),
+        ],
+        if (past.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              "Past Appointments",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          ...past.map(
+            (appt) => _appointmentCard(
+              appt,
+              past.indexOf(appt),
+              ValueKey(appt.appointment_id),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _appointmentCard(appt, int index, Key? key) {
+    return Card(
+      key: key,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              "${DateFormat('dd/MM/yy').format(appt.date)} at ${appt.time}",
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            subtitle: Text(
+              "Consultant/Department: ${appt.consultant}"
+              "\nHospital: ${appt.hospital}"
+              "${appt.notes != null && appt.notes!.isNotEmpty ? "\nNotes: ${appt.notes}" : ""}",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          if (canEditAppointments) _editAppointmentsButton(appt, index),
+          if (canEditAppointments) _deleteAppointmentButton(appt, index),
+        ],
+      ),
     );
   }
 
@@ -294,7 +375,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           "${DateFormat('dd/MM/yyyy').format(appt.date)} at ${appt.time}",
                         ),
                         subtitle: Text(
-                          "Consultant: ${appt.consultant} at ${appt.hospital}",
+                          "Consultant: ${appt.consultant} at ${appt.hospital}"
+                          "\nNotes: ${appt.notes}",
                         ),
                       ),
                     )
@@ -304,4 +386,59 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       ],
     );
   }
+}
+
+class Appointment {
+  final int? appointment_id;
+  final DateTime date;
+  final String time;
+  final String consultant;
+  final String hospital;
+  final String? notes;
+  final String? imagePath;
+
+  Appointment({
+    this.appointment_id,
+    required this.date,
+    required this.time,
+    required this.consultant,
+    required this.hospital,
+    this.notes,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toMap({bool includeId = false}) {
+    final map = {
+      'apt_description': null,
+      'date': date.toString().split(' ')[0],
+      'time': time,
+      'doctor': consultant,
+      'category_id': null,
+      'location': hospital,
+      'apt_notes': notes,
+      'image_path': imagePath,
+      'is_bookmarked': 0,
+    };
+
+    if (includeId && appointment_id != null) {
+      map['appointment_id'] = appointment_id;
+    }
+
+    return map;
+  }
+
+  factory Appointment.fromMap(Map<String, dynamic> map) {
+    return Appointment(
+      appointment_id: map['appointment_id'],
+      date: map['date'] != null && map['date'].toString().isNotEmpty
+          ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      time: map['time']?.toString() ?? "",
+      consultant: map['doctor'],
+      hospital: map['location'],
+      notes: map['apt_notes'],
+      imagePath: map['image_path']?.toString(),
+    );
+  }
+  void add(Appointment newAppt) {}
 }

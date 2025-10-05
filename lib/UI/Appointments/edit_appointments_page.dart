@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:health_app/Services/appointment_services.dart';
-import 'package:health_app/UI/Appointments/scanner_page.dart';
+import 'package:health_app/UI/Appointments/appointments_page.dart';
 import 'package:intl/intl.dart';
 
 class EditAppointmentsPage extends StatefulWidget {
@@ -17,6 +17,7 @@ class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
   late TextEditingController _timeController;
   late TextEditingController _consultantController;
   late TextEditingController _hospitalController;
+  late TextEditingController _notesController;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -34,16 +35,19 @@ class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
     _hospitalController = TextEditingController(
       text: widget.appointment.hospital,
     );
+    _notesController = TextEditingController(text: widget.appointment.notes);
   }
 
   void submitForm() {
     if (_formKey.currentState!.validate()) {
       final parsedDate = DateFormat('dd/MM/yyyy').parse(_dateController.text);
       final updatedAppt = Appointment(
+        appointment_id: widget.appointment.appointment_id,
         date: parsedDate,
         time: _timeController.text,
-        consultant: _consultantController.text,
-        hospital: _hospitalController.text,
+        consultant: _consultantController.text.toLowerCase(),
+        hospital: _hospitalController.text.toLowerCase(),
+        notes: _notesController.text,
       );
 
       updateAppointment(updatedAppt)
@@ -52,7 +56,7 @@ class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
           })
           .catchError((error) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Failed to update appointment $error")),
+              SnackBar(content: Text("Failed to update appointment: $error")),
             );
           });
     }
@@ -120,9 +124,13 @@ class _EditAppointmentsPageState extends State<EditAppointmentsPage> {
               ),
               TextFormField(
                 controller: _consultantController,
-                decoration: const InputDecoration(
-                  labelText: 'Consultant (optional)',
-                ),
+                decoration: const InputDecoration(labelText: 'Consultant or Department'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Enter a doctor or department' : null,
+              ),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(labelText: 'Notes'),
               ),
               const SizedBox(height: 20),
               ElevatedButton(

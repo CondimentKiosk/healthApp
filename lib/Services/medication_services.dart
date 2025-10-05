@@ -57,8 +57,9 @@ final body = med.toMap(includeId: true);
 body['user_id'] = userId;       
 body['patient_id'] = patientId; 
 
+
   if (med.medication_id == null) {
-    throw Exception('Medication ID is required for update');
+    throw Exception('Please leave the page to refresh and try again');
   }
 
   final response = await http.put(   

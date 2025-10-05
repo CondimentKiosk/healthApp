@@ -131,7 +131,9 @@ class _HealthRecordPageState extends State<HealthRecordPage> {
           try {
             await HealthDiaryService.deleteHealthEntry(entry);
             setState(() {
-              widget.healthReport.removeAt(index);
+              widget.healthReport.removeWhere(
+                (h)=>h.entry_id == entry.entry_id
+              );
             });
             ScaffoldMessenger.of(
               context,
